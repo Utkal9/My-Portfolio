@@ -1,75 +1,68 @@
-import { RoughNotation } from "react-rough-notation";
+import React from "react";
 import { motion } from "framer-motion";
+import AnimatedSection from "./ui/AnimatedSection";
 
 const About = () => {
     return (
-        <section className="py-20 px-6 bg-darkBg overflow-hidden">
-            <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-                {/* The "Human" Side (Doodles) */}
-                <div className="relative">
-                    <motion.div
-                        initial={{ rotate: -2 }}
-                        whileHover={{ rotate: 0 }}
-                        className="glass-morph p-2 rounded-xl border-2 border-white/5 relative z-10"
-                    >
-                        <img
-                            src="/coding-doodle.png"
-                            alt="Working"
-                            className="rounded-lg"
-                        />
-                    </motion.div>
+        <section id="about" className="py-24 bg-black overflow-hidden">
+            <div className="max-w-6xl mx-auto px-6">
+                <div className="grid md:grid-cols-2 gap-16 items-center">
+                    <AnimatedSection>
+                        <div className="relative group">
+                            <div className="absolute -inset-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl opacity-20 group-hover:opacity-40 transition duration-500 blur-xl"></div>
+                            <div className="relative bg-gray-900 rounded-2xl overflow-hidden border border-gray-800">
+                                <img
+                                    src="/src/assets/hero.png"
+                                    alt="Utkal Behera"
+                                    className="w-full grayscale hover:grayscale-0 transition duration-500"
+                                />
+                            </div>
+                        </div>
+                    </AnimatedSection>
 
-                    {/* Decorative Sketchy SVG (The "Imperfection") */}
-                    <svg
-                        className="absolute -top-10 -left-10 w-32 h-32 text-neoPrimary opacity-50"
-                        viewBox="0 0 100 100"
-                    >
-                        <path
-                            d="M10,50 Q25,10 50,50 T90,50"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                        />
-                    </svg>
-                </div>
-
-                {/* Content Section */}
-                <div className="space-y-6">
-                    <h2 className="text-4xl font-bold tracking-tight">
-                        The <span className="text-neoPrimary">Developer</span>{" "}
-                        Behind the Code
-                    </h2>
-
-                    <p className="text-slate-400 leading-relaxed text-lg">
-                        I'm a{" "}
-                        <RoughNotation
-                            type="highlight"
-                            show={true}
-                            color="#6366f133"
-                            animationDelay={1000}
-                        >
-                            B.Tech CS Student
-                        </RoughNotation>{" "}
-                        at Lovely Professional University[cite: 69]. I don't
-                        just write code; I build digital experiences that solve
-                        real-world problems[cite: 12, 25].
-                    </p>
-
-                    <div className="grid grid-cols-2 gap-4 pt-4">
-                        <div className="p-4 glass-morph rounded-2xl border-dashed border-2 border-white/10">
-                            <h4 className="font-bold text-neoPrimary">Goal</h4>
-                            <p className="text-xs text-slate-500">
-                                Scalable MERN Architect [cite: 43]
+                    <AnimatedSection>
+                        <h2 className="text-blue-500 font-mono text-sm mb-4 uppercase tracking-widest">
+                            01. About Me
+                        </h2>
+                        <h3 className="text-3xl font-bold text-white mb-6">
+                            Developing with Purpose.
+                        </h3>
+                        <div className="space-y-4 text-gray-400 text-lg leading-relaxed">
+                            <p>
+                                Hello! My name is{" "}
+                                <span className="text-white">Utkal Behera</span>
+                                . My journey into web development started back
+                                in college when I realized I could turn lines of
+                                code into functional, beautiful products.
+                            </p>
+                            <p>
+                                Fast-forward to today, and I've had the
+                                privilege of working on diverse projects—from{" "}
+                                <span className="text-blue-400">
+                                    Social Media Platforms
+                                </span>{" "}
+                                to{" "}
+                                <span className="text-purple-400">
+                                    AI-integrated applications
+                                </span>
+                                . My main focus these days is building
+                                accessible, high-performance products for the
+                                web.
+                            </p>
+                            <p>
+                                I'm a B.Tech Computer Science student at{" "}
+                                <span className="text-white">
+                                    Lovely Professional University
+                                </span>
+                                , constantly pushing the boundaries of what I
+                                can build with the{" "}
+                                <span className="text-blue-500 font-mono">
+                                    MERN Stack
+                                </span>
+                                .
                             </p>
                         </div>
-                        <div className="p-4 glass-morph rounded-2xl border-dashed border-2 border-white/10">
-                            <h4 className="font-bold text-neoAccent">Focus</h4>
-                            <p className="text-xs text-slate-500">
-                                Production-Ready Apps [cite: 14]
-                            </p>
-                        </div>
-                    </div>
+                    </AnimatedSection>
                 </div>
             </div>
         </section>
