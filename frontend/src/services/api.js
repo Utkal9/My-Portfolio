@@ -35,4 +35,9 @@ export const login = (formData) => API.post("/auth/login", formData);
 // Contact
 export const sendMessage = (messageData) => API.post("/contact", messageData);
 
+// Gallery API
+export const fetchGallery = () => API.get("/gallery");
+export const uploadToGallery = (imageData) => API.post("/gallery", imageData);
+export const deleteGalleryImage = (id) => API.delete(`/gallery/${id}`);
+
 export default API;
