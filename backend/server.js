@@ -11,12 +11,12 @@ const skillRoutes = require("./routes/skillRoutes");
 const experienceRoutes = require("./routes/experienceRoutes");
 const socialRoutes = require("./routes/socialRoutes");
 const resumeRoutes = require("./routes/resumeRoutes");
+const galleryRoutes = require("./routes/galleryRoutes"); // New
 
 dotenv.config();
 connectDB();
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
@@ -28,6 +28,7 @@ app.use("/api/skills", skillRoutes);
 app.use("/api/experience", experienceRoutes);
 app.use("/api/socials", socialRoutes);
 app.use("/api/resume", resumeRoutes);
+app.use("/api/gallery", galleryRoutes); // New
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

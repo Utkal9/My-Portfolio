@@ -3,21 +3,23 @@
 @tailwind utilities;
 
 :root {
-    color-scheme: dark;
+    color-scheme: light;
 }
 
 body {
-    @apply bg-black text-white;
+    @apply bg-white text-dark;
     font-family: "Inter", sans-serif;
+    scroll-behavior: smooth;
 }
 
-.glass-card {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
+.btn-primary {
+    @apply bg-orange-gradient text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-orange-500/30 transition-all transform hover:scale-[1.02] active:scale-95;
 }
 
-.gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500;
+.glass-card-light {
+    @apply bg-white/70 backdrop-blur-md border border-gray-100 rounded-3xl shadow-xl shadow-gray-200/50;
+}
+
+.section-padding {
+    @apply py-24 px-6;
 }
