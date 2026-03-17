@@ -1,72 +1,53 @@
-import { motion } from "framer-motion";
-import { Typewriter } from "react-simple-typewriter";
-import { Github, Linkedin, Mail, ExternalLink } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import API from "../services/api";
 
 const Hero = () => {
+    const [resumeUrl, setResumeUrl] = useState("#");
+
+    useEffect(() => {
+        const getResume = async () => {
+            try {
+                const { data } = await API.get("/resume");
+                if (data) setResumeUrl(data.resumeUrl);
+            } catch (err) {
+                console.error("Resume fetch failed");
+            }
+        };
+        getResume();
+    }, []);
+
     return (
-        <section className="min-h-screen flex items-center justify-center p-6 bg-liquid-gradient">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl w-full">
-                {/* Main Bento Box: Intro */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="md:col-span-2 glass-morph bento-inner flex flex-col justify-between"
-                >
-                    <div>
-                        <h1 className="text-5xl md:text-7xl font-bold mb-4 tracking-tighter">
-                            Hi, I'm{" "}
-                            <span className="text-neoPrimary">
-                                Utkal Behera
-                            </span>
-                        </h1>
-                        <h2 className="text-2xl md:text-3xl text-slate-400">
-                            I build{" "}
-                            <span className="text-white">
-                                <Typewriter
-                                    words={[
-                                        "Scalable Apps",
-                                        "MERN Systems",
-                                        "AI Interfaces",
-                                    ]}
-                                    loop={0}
-                                    cursor
-                                />
-                            </span>
-                        </h2>
-                    </div>
-                    <p className="mt-8 text-slate-400 max-w-md">
-                        Full-Stack Developer specializing in high-performance
-                        web applications and production-level architecture.
-                    </p>
-                </motion.div>
-
-                {/* Bento Box: Profile Image (Neo-Brutalism Border) */}
-                <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="glass-morph bento-inner border-2 border-neoPrimary shadow-neo overflow-hidden flex items-center justify-center"
-                >
-                    <img
-                        src="/your-photo.jpg"
-                        alt="Utkal"
-                        className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500"
-                    />
-                </motion.div>
-
-                {/* Bento Box: Socials & Action */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    className="glass-morph bento-inner flex justify-around items-center"
-                >
-                    <Github className="hover:text-neoPrimary cursor-pointer" />
-                    <Linkedin className="hover:text-neoPrimary cursor-pointer" />
-                    <Mail className="hover:text-neoPrimary cursor-pointer" />
-                    <button className="bg-neoPrimary px-6 py-2 rounded-full font-bold flex items-center gap-2 hover:bg-white hover:text-black transition-all">
-                        Resume <ExternalLink size={16} />
-                    </button>
-                </motion.div>
+        <section className="min-h-screen flex items-center justify-center bg-black px-4 pt-20">
+            <div className="text-center">
+                <h2 className="text-blue-500 font-mono mb-4 text-lg">
+                    Hi, my name is
+                </h2>
+                <h1 className="text-5xl md:text-7xl font-bold text-white mb-6">
+                    Utkal Behera.
+                </h1>
+                <h3 className="text-3xl md:text-5xl font-bold text-gray-400 mb-8">
+                    Building the future with MERN & AI.
+                </h3>
+                <p className="max-w-xl mx-auto text-gray-500 mb-10 text-lg">
+                    I'm a Full Stack Developer specializing in building (and
+                    occasionally designing) exceptional digital experiences.
+                </p>
+                <div className="flex justify-center gap-6">
+                    <a
+                        href={resumeUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-8 py-3 bg-transparent border-2 border-blue-500 text-blue-500 font-bold rounded-lg hover:bg-blue-500 hover:text-white transition"
+                    >
+                        Download Resume
+                    </a>
+                    <a
+                        href="#projects"
+                        className="px-8 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition"
+                    >
+                        View Projects
+                    </a>
+                </div>
             </div>
         </section>
     );
