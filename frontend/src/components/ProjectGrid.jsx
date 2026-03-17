@@ -1,68 +1,42 @@
-import { useEffect } from "react";
-import { motion } from "framer-motion";
+import React from "react";
 import useProjectStore from "../store/useProjectStore";
-import { ExternalLink, Github } from "lucide-react";
+import ProjectCard from "./ProjectCard";
+import AnimatedSection from "./ui/AnimatedSection";
 
 const ProjectGrid = () => {
-    const { projects, fetchProjects, loading } = useProjectStore();
+    const { projects, loading } = useProjectStore();
 
-    useEffect(() => {
-        fetchProjects();
-    }, []);
+    if (loading)
+        return (
+            <div className="flex justify-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+        );
 
     return (
-        <section className="p-10 bg-darkBg">
-            <h2 className="text-4xl font-bold mb-10 tracking-tight text-center">
-                Featured <span className="text-neoPrimary">Projects</span>
-            </h2>
+        <section id="projects" className="py-24 bg-black">
+            <div className="max-w-7xl mx-auto px-6">
+                <AnimatedSection className="text-center mb-16">
+                    <h2 className="text-4xl font-bold text-white mb-4">
+                        Featured Work
+                    </h2>
+                    <p className="text-gray-400 max-w-2xl mx-auto">
+                        A collection of projects ranging from full-stack web
+                        applications to AI-integrated platforms.
+                    </p>
+                </AnimatedSection>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 max-w-7xl mx-auto">
-                {projects.map((project, index) => (
-                    <motion.div
-                        key={project._id}
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: index * 0.1 }}
-                        // Making some cards larger for a true "Bento" look
-                        className={`glass-morph bento-inner group ${
-                            index === 0
-                                ? "md:col-span-2 md:row-span-2"
-                                : "md:col-span-1"
-                        }`}
-                    >
-                        <div className="relative overflow-hidden rounded-2xl h-48 mb-4">
-                            <img
-                                src={
-                                    project.image?.url ||
-                                    "https://via.placeholder.com/400"
-                                }
-                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                            />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                                <a href={project.githubLink}>
-                                    <Github className="text-white hover:text-neoPrimary" />
-                                </a>
-                                <a href={project.liveLink}>
-                                    <ExternalLink className="text-white hover:text-neoPrimary" />
-                                </a>
-                            </div>
-                        </div>
-                        <h3 className="text-xl font-bold">{project.title}</h3>
-                        <p className="text-slate-400 text-sm line-clamp-2">
-                            {project.description}
-                        </p>
-                        <div className="flex flex-wrap gap-2 mt-4">
-                            {project.techStack.map((tech) => (
-                                <span
-                                    key={tech}
-                                    className="text-[10px] bg-neoPrimary/20 text-neoPrimary px-2 py-1 rounded-md border border-neoPrimary/30"
-                                >
-                                    {tech}
-                                </span>
-                            ))}
-                        </div>
-                    </motion.div>
-                ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {projects.map((project) => (
+                        <ProjectCard key={project._id} project={project} />
+                    ))}
+                </div>
+
+                {projects.length === 0 && (
+                    <p className="text-center text-gray-500 py-10 italic">
+                        No projects found. Add some from the admin dashboard!
+                    </p>
+                )}
             </div>
         </section>
     );

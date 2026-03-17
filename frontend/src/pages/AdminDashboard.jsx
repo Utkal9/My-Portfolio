@@ -2,12 +2,16 @@ import React, { useEffect } from "react";
 import ProjectManager from "../components/admin/ProjectManager";
 import SkillManager from "../components/admin/SkillManager";
 import ExperienceManager from "../components/admin/ExperienceManager";
+import MessageViewer from "../components/admin/MessageViewer";
+import ResumeManager from "../components/admin/ResumeManager";
+import SocialManager from "../components/admin/SocialManager";
+import DashboardStats from "../components/admin/DashboardStats";
 import useProjectStore from "../store/useProjectStore";
 import usePortfolioStore from "../store/usePortfolioStore";
 
 const AdminDashboard = () => {
-    const { fetchProjects } = useProjectStore();
-    const { fetchPortfolioData } = usePortfolioStore();
+    const { projects, fetchProjects } = useProjectStore();
+    const { skills, experiences, fetchPortfolioData } = usePortfolioStore();
 
     useEffect(() => {
         fetchProjects();
@@ -15,21 +19,35 @@ const AdminDashboard = () => {
     }, []);
 
     return (
-        <div className="min-h-screen bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-6xl mx-auto">
-                <header className="mb-12">
-                    <h1 className="text-4xl font-extrabold text-white text-center">
-                        Portfolio Command Center
+        <div className="min-h-screen bg-gray-950 pt-28 pb-20 px-6">
+            <div className="max-w-7xl mx-auto">
+                <header className="mb-10">
+                    <h1 className="text-3xl font-bold text-white">
+                        Admin Dashboard
                     </h1>
-                    <p className="text-gray-400 text-center mt-2">
-                        Manage your projects, skills, and experience
+                    <p className="text-gray-500">
+                        Welcome back, Utkal. Manage your portfolio content here.
                     </p>
                 </header>
 
-                <div className="space-y-12">
-                    <ProjectManager />
-                    <SkillManager />
-                    <ExperienceManager />
+                <DashboardStats
+                    projectCount={projects.length}
+                    skillCount={skills.length}
+                    expCount={experiences.length}
+                    messageCount="-" // Can be updated once we add message state to store
+                />
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div className="space-y-8">
+                        <ProjectManager />
+                        <SkillManager />
+                        <SocialManager />
+                    </div>
+                    <div className="space-y-8">
+                        <ExperienceManager />
+                        <ResumeManager />
+                        <MessageViewer />
+                    </div>
                 </div>
             </div>
         </div>

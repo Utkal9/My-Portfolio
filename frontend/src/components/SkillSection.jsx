@@ -1,47 +1,49 @@
 import React from "react";
 import usePortfolioStore from "../store/usePortfolioStore";
+import SkillBadge from "./SkillBadge";
+import AnimatedSection from "./ui/AnimatedSection";
 
 const SkillSection = () => {
     const { skills } = usePortfolioStore();
-
     const categories = [
         "Frontend",
         "Backend",
         "Programming",
-        "Tools",
         "Database",
+        "Tools",
     ];
 
     return (
-        <section id="skills" className="py-20 bg-gray-900">
-            <div className="max-w-6xl mx-auto px-4">
-                <h2 className="text-4xl font-bold text-white mb-12 text-center">
-                    Technical Shelf
-                </h2>
+        <section id="skills" className="py-24 bg-gray-950">
+            <div className="max-w-6xl mx-auto px-6">
+                <AnimatedSection className="text-center mb-16">
+                    <h2 className="text-4xl font-bold text-white mb-4">
+                        Technical Toolkit
+                    </h2>
+                    <p className="text-gray-400">
+                        The technologies and tools I use to bring ideas to life.
+                    </p>
+                </AnimatedSection>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
                     {categories.map((cat) => {
-                        const filteredSkills = skills.filter(
+                        const filtered = skills.filter(
                             (s) => s.category === cat,
                         );
-                        if (filteredSkills.length === 0) return null;
+                        if (filtered.length === 0) return null;
 
                         return (
-                            <div
-                                key={cat}
-                                className="bg-gray-800 p-6 rounded-2xl border border-gray-700 hover:border-blue-500 transition-colors"
-                            >
-                                <h3 className="text-xl font-bold text-blue-400 mb-4">
+                            <div key={cat} className="space-y-6">
+                                <h3 className="text-lg font-mono text-blue-500 flex items-center gap-2">
+                                    <span className="w-8 h-[1px] bg-blue-500/50"></span>
                                     {cat}
                                 </h3>
-                                <div className="flex flex-wrap gap-2">
-                                    {filteredSkills.map((skill) => (
-                                        <span
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {filtered.map((skill) => (
+                                        <SkillBadge
                                             key={skill._id}
-                                            className="bg-gray-700 text-gray-200 px-3 py-1 rounded-full text-sm border border-gray-600"
-                                        >
-                                            {skill.skillName}
-                                        </span>
+                                            skill={skill}
+                                        />
                                     ))}
                                 </div>
                             </div>
