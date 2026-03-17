@@ -1,47 +1,30 @@
-const Project = require("../models/Project");
+const { cloudinary } = require("../config/cloudinary");
 
-// @desc    Get all projects
-exports.getProjects = async (req, res) => {
+// @desc    Delete project
+// @route   DELETE /api/projects/:id
+exports.deleteProject = async (req, res) => {
     try {
-        const projects = await Project.find().sort({ createdAt: -1 });
-        res.status(200).json({ success: true, data: projects });
-    } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
-    }
-};
+        const project = await Project.findById(req.params.id);
 
-// @desc    Create new project
-exports.createProject = async (req, res) => {
-    try {
-        const {
-            title,
-            description,
-            techStack,
-            githubLink,
-            liveLink,
-            category,
-        } = req.body;
-
-        const projectData = {
-            title,
-            description,
-            techStack: techStack ? techStack.split(",") : [], // Split string "React,Node" into array
-            githubLink,
-            liveLink,
-            category,
-        };
-
-        // If a file was uploaded, add image data
-        if (req.file) {
-            projectData.image = {
-                url: req.file.path,
-                public_id: req.file.filename,
-            };
+        if (!project) {
+            return res
+                .status(404)
+                .json({ success: false, message: "Project not found" });
         }
 
-        const project = await Project.create(projectData);
-        res.status(201).json({ success: true, data: project });
+        // 1. Delete image from Cloudinary if it exists
+        if (project.image && project.image.public_id) {
+            await cloudinary.uploader.destroy(project.image.public_id);
+        }
+
+        // 2. Delete project from MongoDB
+        await project.deleteOne();
+
+        res.status(200).json({
+            success: true,
+            message: "Project and assets removed.",
+        });
     } catch (err) {
-        res.status(400).json({ success: false, message: err.message });
+        res.status(500).json({ success: false, message: err.message });
     }
 };
