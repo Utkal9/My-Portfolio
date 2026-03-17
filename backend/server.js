@@ -4,7 +4,7 @@ const cors = require("cors");
 const colors = require("colors");
 const connectDB = require("./config/db");
 const projectRoutes = require("./routes/projectRoutes");
-
+const authRoutes = require("./routes/authRoutes");
 // Load env vars
 dotenv.config();
 
@@ -16,6 +16,7 @@ const app = express();
 // Body parser
 app.use(express.json());
 app.use(cors());
+app.use("/api/auth", authRoutes);
 app.use("/api/projects", projectRoutes);
 // Basic Route for Testing
 app.get("/", (req, res) => {
