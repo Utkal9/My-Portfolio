@@ -1,35 +1,30 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
-const colors = require("colors");
 const connectDB = require("./config/db");
-const projectRoutes = require("./routes/projectRoutes");
-const authRoutes = require("./routes/authRoutes");
-const contactRoutes = require("./routes/contactRoutes");
-// Load env vars
-dotenv.config();
 
-// Connect to Database
+// Route Imports
+const authRoutes = require("./routes/authRoutes");
+const projectRoutes = require("./routes/projectRoutes");
+const contactRoutes = require("./routes/contactRoutes");
+// New Route Imports (To be created)
+const skillRoutes = require("./routes/skillRoutes");
+const experienceRoutes = require("./routes/experienceRoutes");
+
+dotenv.config();
 connectDB();
 
 const app = express();
 
-// Body parser
-app.use(express.json());
 app.use(cors());
+app.use(express.json());
+
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/contact", contactRoutes);
-// Basic Route for Testing
-app.get("/", (req, res) => {
-    res.send("Portfolio API is running...");
-});
+app.use("/api/skills", skillRoutes);
+app.use("/api/experience", experienceRoutes);
 
 const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-    console.log(
-        `Server running in ${process.env.NODE_ENV} mode on port ${PORT}`.yellow
-            .bold,
-    );
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

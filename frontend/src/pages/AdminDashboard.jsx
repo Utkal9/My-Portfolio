@@ -1,74 +1,37 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
-import {
-    LayoutDashboard,
-    Briefcase,
-    MessageSquare,
-    LogOut,
-    Plus,
-} from "lucide-react";
+import React, { useEffect } from "react";
 import ProjectManager from "../components/admin/ProjectManager";
-import { useNavigate } from "react-router-dom";
+import SkillManager from "../components/admin/SkillManager";
+import ExperienceManager from "../components/admin/ExperienceManager";
+import useProjectStore from "../store/useProjectStore";
+import usePortfolioStore from "../store/usePortfolioStore";
 
 const AdminDashboard = () => {
-    const [activeTab, setActiveTab] = useState("projects");
-    const navigate = useNavigate();
+    const { fetchProjects } = useProjectStore();
+    const { fetchPortfolioData } = usePortfolioStore();
 
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        navigate("/login");
-    };
+    useEffect(() => {
+        fetchProjects();
+        fetchPortfolioData();
+    }, []);
 
     return (
-        <div className="flex min-h-screen bg-darkBg text-white">
-            {/* Sidebar */}
-            <nav className="w-64 glass-morph m-4 rounded-3xl p-6 flex flex-col justify-between">
-                <div>
-                    <h2 className="text-xl font-bold mb-10 text-neoPrimary">
-                        Admin Hub
-                    </h2>
-                    <ul className="space-y-4">
-                        <li
-                            onClick={() => setActiveTab("projects")}
-                            className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${activeTab === "projects" ? "bg-neoPrimary shadow-neo" : "hover:bg-white/5"}`}
-                        >
-                            <Briefcase size={20} /> Projects
-                        </li>
-                        <li
-                            onClick={() => setActiveTab("messages")}
-                            className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${activeTab === "messages" ? "bg-neoPrimary shadow-neo" : "hover:bg-white/5"}`}
-                        >
-                            <MessageSquare size={20} /> Messages
-                        </li>
-                    </ul>
-                </div>
-
-                <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-3 p-3 text-red-400 hover:bg-red-500/10 rounded-xl transition-all"
-                >
-                    <LogOut size={20} /> Logout
-                </button>
-            </nav>
-
-            {/* Main Content Area */}
-            <main className="flex-1 p-8 overflow-y-auto">
-                <header className="flex justify-between items-center mb-8">
-                    <h1 className="text-3xl font-bold capitalize">
-                        {activeTab} Manager
+        <div className="min-h-screen bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-6xl mx-auto">
+                <header className="mb-12">
+                    <h1 className="text-4xl font-extrabold text-white text-center">
+                        Portfolio Command Center
                     </h1>
-                    <div className="text-sm text-slate-400">
-                        Welcome back, Utkal
-                    </div>
+                    <p className="text-gray-400 text-center mt-2">
+                        Manage your projects, skills, and experience
+                    </p>
                 </header>
 
-                {activeTab === "projects" && <ProjectManager />}
-                {activeTab === "messages" && (
-                    <div className="glass-morph p-6 rounded-3xl">
-                        Coming Soon: Message Inbox
-                    </div>
-                )}
-            </main>
+                <div className="space-y-12">
+                    <ProjectManager />
+                    <SkillManager />
+                    <ExperienceManager />
+                </div>
+            </div>
         </div>
     );
 };

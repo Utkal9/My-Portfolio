@@ -1,20 +1,27 @@
 const mongoose = require("mongoose");
 
-const ProjectSchema = new mongoose.Schema(
+const projectSchema = new mongoose.Schema(
     {
-        title: { type: String, required: true, trim: true },
+        title: { type: String, required: true },
         description: { type: String, required: true },
-        techStack: [{ type: String }], // Array of strings (e.g., ["React", "Node"])
-        image: {
-            url: String,
-            public_id: String, // For Cloudinary deletion
-        },
+        techStack: [{ type: String }], // Changed to Array for easier filtering
         githubLink: { type: String },
         liveLink: { type: String },
-        category: { type: String, default: "Web" },
-        featured: { type: Boolean, default: false },
+        imageURL: { type: String },
+        cloudinaryPublicId: { type: String }, // Added for efficient Cloudinary management
+        category: {
+            type: String,
+            enum: [
+                "Web App",
+                "Mobile App",
+                "Machine Learning",
+                "UI/UX",
+                "Other",
+            ],
+            default: "Web App",
+        },
     },
     { timestamps: true },
 );
 
-module.exports = mongoose.model("Project", ProjectSchema);
+module.exports = mongoose.model("Project", projectSchema);

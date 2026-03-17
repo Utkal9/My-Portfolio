@@ -3,27 +3,21 @@
 @tailwind utilities;
 
 :root {
-    background-color: #030712;
-    color: #f8fafc;
-    scroll-behavior: smooth;
+    color-scheme: dark;
 }
 
-.glass-morph {
-    @apply backdrop-blur-xl bg-white/5 border border-white/10 shadow-2xl;
+body {
+    @apply bg-black text-white;
+    font-family: "Inter", sans-serif;
 }
 
-.bento-inner {
-    @apply rounded-3xl p-6 transition-all duration-300 hover:scale-[1.02];
+.glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
 }
 
-/* Custom Scrollbar for 2026 UI */
-::-webkit-scrollbar {
-    width: 8px;
-}
-::-webkit-scrollbar-track {
-    background: #030712;
-}
-::-webkit-scrollbar-thumb {
-    background: #1e293b;
-    border-radius: 10px;
+.gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500;
 }
