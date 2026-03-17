@@ -5,6 +5,7 @@ const colors = require("colors");
 const connectDB = require("./config/db");
 const projectRoutes = require("./routes/projectRoutes");
 const authRoutes = require("./routes/authRoutes");
+const contactRoutes = require("./routes/contactRoutes");
 // Load env vars
 dotenv.config();
 
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use(cors());
 app.use("/api/auth", authRoutes);
 app.use("/api/projects", projectRoutes);
+app.use("/api/contact", contactRoutes);
 // Basic Route for Testing
 app.get("/", (req, res) => {
     res.send("Portfolio API is running...");
