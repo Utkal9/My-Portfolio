@@ -1,8 +1,9 @@
 const jwt = require("jsonwebtoken");
 
 const generateToken = (id) => {
+    // Generates a token that expires in 30 days
     return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: "30d", // You won't have to log in every day
+        expiresIn: "30d",
     });
 };
 

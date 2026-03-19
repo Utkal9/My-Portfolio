@@ -1,14 +1,36 @@
 const mongoose = require("mongoose");
 
-const MessageSchema = new mongoose.Schema(
+const messageSchema = new mongoose.Schema(
     {
-        name: { type: String, required: true },
-        email: { type: String, required: true },
-        subject: { type: String, default: "Portfolio Contact" },
-        message: { type: String, required: true },
-        status: { type: String, default: "unread" }, // Helpful for your Admin Dashboard
+        name: {
+            type: String,
+            required: [true, "Please add a name"],
+            trim: true,
+        },
+        email: {
+            type: String,
+            required: [true, "Please add an email"],
+            match: [
+                /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+                "Please add a valid email",
+            ],
+        },
+        subject: {
+            type: String,
+            required: [true, "Please add a subject"],
+        },
+        message: {
+            type: String,
+            required: [true, "Please add a message"],
+        },
+        isRead: {
+            type: Boolean,
+            default: false,
+        },
     },
-    { timestamps: true },
+    {
+        timestamps: true,
+    },
 );
 
-module.exports = mongoose.model("Message", MessageSchema);
+module.exports = mongoose.model("Message", messageSchema);

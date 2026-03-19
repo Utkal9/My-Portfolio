@@ -1,90 +1,136 @@
 import React, { useState } from "react";
-import * as api from "../services/api";
+import axios from "axios";
 
 const ContactForm = () => {
     const [formData, setFormData] = useState({
         name: "",
         email: "",
+        subject: "",
         message: "",
     });
-    const [status, setStatus] = useState("");
+    const [status, setStatus] = useState({
+        submitting: false,
+        success: false,
+        error: null,
+    });
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setStatus("Sending...");
+        setStatus({ submitting: true, success: false, error: null });
+
         try {
-            await api.sendMessage(formData);
-            setStatus("Message Sent Successfully!");
-            setFormData({ name: "", email: "", message: "" });
+            await axios.post("/api/contact", formData);
+            setStatus({ submitting: false, success: true, error: null });
+            setFormData({ name: "", email: "", subject: "", message: "" });
+
+            // Reset success message after 5 seconds
+            setTimeout(
+                () => setStatus((prev) => ({ ...prev, success: false })),
+                5000,
+            );
         } catch (error) {
-            setStatus("Failed to send message. Please try again.");
+            setStatus({
+                submitting: false,
+                success: false,
+                error: error.response?.data?.error || "Failed to send message.",
+            });
         }
     };
 
     return (
-        <section id="contact" className="py-20 bg-black">
-            <div className="max-w-4xl mx-auto px-4">
-                <h2 className="text-4xl font-bold text-center text-white mb-12">
-                    Get In Touch
-                </h2>
-                <div className="glass-card p-8 md:p-12">
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <input
-                                type="text"
-                                placeholder="Your Name"
-                                required
-                                className="bg-gray-800 border border-gray-700 text-white p-4 rounded-xl focus:border-blue-500 outline-none transition"
-                                value={formData.name}
-                                onChange={(e) =>
-                                    setFormData({
-                                        ...formData,
-                                        name: e.target.value,
-                                    })
-                                }
-                            />
-                            <input
-                                type="email"
-                                placeholder="Email Address"
-                                required
-                                className="bg-gray-800 border border-gray-700 text-white p-4 rounded-xl focus:border-blue-500 outline-none transition"
-                                value={formData.email}
-                                onChange={(e) =>
-                                    setFormData({
-                                        ...formData,
-                                        email: e.target.value,
-                                    })
-                                }
-                            />
-                        </div>
-                        <textarea
-                            placeholder="Your Message"
-                            rows="5"
-                            required
-                            className="bg-gray-800 border border-gray-700 text-white p-4 rounded-xl w-full focus:border-blue-500 outline-none transition"
-                            value={formData.message}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    message: e.target.value,
-                                })
-                            }
-                        />
-                        <button
-                            type="submit"
-                            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold py-4 rounded-xl hover:opacity-90 transition transform hover:scale-[1.01]"
-                        >
-                            Send Message
-                        </button>
-                        {status && (
-                            <p className="text-center text-gray-400 mt-4">
-                                {status}
-                            </p>
-                        )}
-                    </form>
+        <form
+            onSubmit={handleSubmit}
+            className="bg-white p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100"
+        >
+            <h3 className="text-2xl font-bold text-gray-900 mb-6">
+                Send me a message
+            </h3>
+
+            {status.success && (
+                <div className="mb-6 p-4 bg-orange-50 text-orange-600 rounded-lg border border-orange-100 font-medium">
+                    Message sent successfully! I'll get back to you soon.
+                </div>
+            )}
+
+            {status.error && (
+                <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-lg border border-red-100 font-medium">
+                    {status.error}
+                </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Your Name
+                    </label>
+                    <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        required
+                        className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors bg-gray-50 text-gray-900"
+                        placeholder="John Doe"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Your Email
+                    </label>
+                    <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
+                        className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors bg-gray-50 text-gray-900"
+                        placeholder="john@example.com"
+                    />
                 </div>
             </div>
-        </section>
+
+            <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Subject
+                </label>
+                <input
+                    type="text"
+                    name="subject"
+                    value={formData.subject}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors bg-gray-50 text-gray-900"
+                    placeholder="Project Inquiry"
+                />
+            </div>
+
+            <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Message
+                </label>
+                <textarea
+                    name="message"
+                    value={formData.message}
+                    onChange={handleChange}
+                    required
+                    rows="5"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors bg-gray-50 text-gray-900 resize-none"
+                    placeholder="How can we work together?"
+                ></textarea>
+            </div>
+
+            <button
+                type="submit"
+                disabled={status.submitting}
+                className="w-full py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-bold text-lg shadow-lg shadow-orange-500/30 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+                {status.submitting ? "Sending..." : "Send Message"}
+            </button>
+        </form>
     );
 };
 

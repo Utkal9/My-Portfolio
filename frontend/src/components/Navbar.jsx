@@ -1,77 +1,77 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Menu, X } from "lucide-react";
 
 const Navbar = () => {
-    const [scrolled, setScrolled] = useState(false);
+    const [isScrolled, setIsScrolled] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+    // Handle scroll effect for navbar shadow
     useEffect(() => {
         const handleScroll = () => {
-            setScrolled(window.scrollY > 50);
+            setIsScrolled(window.scrollY > 20);
         };
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
     const navLinks = [
-        { name: "About", href: "#about" },
+        { name: "Home", href: "#home" },
         { name: "Skills", href: "#skills" },
-        { name: "Experience", href: "#experience" },
         { name: "Projects", href: "#projects" },
+        { name: "Experience", href: "#experience" },
         { name: "Contact", href: "#contact" },
     ];
 
     return (
         <nav
-            className={`fixed w-full z-50 transition-all duration-300 ${
-                scrolled
-                    ? "bg-black/80 backdrop-blur-md py-4 border-b border-gray-800"
-                    : "bg-transparent py-6"
-            }`}
+            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? "bg-white/90 backdrop-blur-md shadow-sm py-3" : "bg-transparent py-5"}`}
         >
-            <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-                <Link
-                    to="/"
-                    className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent"
+            <div className="container mx-auto px-6 max-w-6xl flex justify-between items-center">
+                {/* Logo */}
+                <a
+                    href="#home"
+                    className="text-2xl font-black tracking-tighter text-gray-900"
                 >
-                    UB.
-                </Link>
+                    Utkal<span className="text-orange-500">.</span>
+                </a>
 
-                <div className="hidden md:flex space-x-8">
+                {/* Desktop Nav */}
+                <div className="hidden md:flex items-center gap-8">
                     {navLinks.map((link) => (
                         <a
                             key={link.name}
                             href={link.href}
-                            className="text-gray-300 hover:text-blue-500 transition-colors font-medium text-sm tracking-wide"
+                            className="text-sm font-semibold text-gray-600 hover:text-orange-500 transition-colors"
                         >
                             {link.name}
                         </a>
                     ))}
-                    <Link
-                        to="/admin"
-                        className="text-gray-500 hover:text-white transition-colors text-sm"
-                    >
-                        Admin
-                    </Link>
                 </div>
 
-                {/* Mobile Menu Icon (Simplified) */}
-                <div className="md:hidden text-white">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M4 6h16M4 12h16m-7 6h7"
-                        />
-                    </svg>
-                </div>
+                {/* Mobile Menu Toggle */}
+                <button
+                    className="md:hidden text-gray-900"
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                >
+                    {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+                </button>
             </div>
+
+            {/* Mobile Nav Dropdown */}
+            {isMobileMenuOpen && (
+                <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-100 shadow-lg py-4 px-6 flex flex-col gap-4">
+                    {navLinks.map((link) => (
+                        <a
+                            key={link.name}
+                            href={link.href}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="text-base font-semibold text-gray-800 hover:text-orange-500 block py-2"
+                        >
+                            {link.name}
+                        </a>
+                    ))}
+                </div>
+            )}
         </nav>
     );
 };

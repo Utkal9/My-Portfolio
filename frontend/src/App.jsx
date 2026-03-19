@@ -1,77 +1,37 @@
-import React, { useEffect } from "react";
-import {
-    BrowserRouter as Router,
-    Routes,
-    Route,
-    useLocation,
-} from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Layout from "./components/Layout";
 import Hero from "./components/Hero";
-import About from "./components/About";
-import ProjectGrid from "./components/ProjectGrid";
 import SkillSection from "./components/SkillSection";
+import ProjectGrid from "./components/ProjectGrid";
 import ExperienceTimeline from "./components/ExperienceTimeline";
 import ContactSection from "./components/ContactSection";
+
+// 1. We uncomment these Admin imports!
 import AdminDashboard from "./pages/AdminDashboard";
 import Login from "./pages/Login";
-import Layout from "./components/Layout";
-import PageTransition from "./components/ui/PageTransition";
-import usePortfolioStore from "./store/usePortfolioStore";
-import useProjectStore from "./store/useProjectStore";
 
-function AnimatedRoutes() {
-    const location = useLocation();
-    const { fetchPortfolioData } = usePortfolioStore();
-    const { fetchProjects } = useProjectStore();
-
-    useEffect(() => {
-        fetchPortfolioData();
-        fetchProjects();
-    }, []);
-
-    return (
-        <AnimatePresence mode="wait">
-            <Routes location={location} key={location.pathname}>
-                <Route
-                    path="/"
-                    element={
-                        <PageTransition>
-                            <Layout>
-                                <Hero />
-                                <About />
-                                <SkillSection />
-                                <ExperienceTimeline />
-                                <ProjectGrid />
-                                <ContactSection />
-                            </Layout>
-                        </PageTransition>
-                    }
-                />
-                <Route
-                    path="/login"
-                    element={
-                        <PageTransition>
-                            <Login />
-                        </PageTransition>
-                    }
-                />
-                <Route
-                    path="/admin"
-                    element={
-                        <PageTransition>
-                            <AdminDashboard />
-                        </PageTransition>
-                    }
-                />
-            </Routes>
-        </AnimatePresence>
-    );
-}
+const PortfolioHomePage = () => (
+    <Layout>
+        <Hero />
+        <SkillSection />
+        <ProjectGrid />
+        <ExperienceTimeline />
+        <ContactSection />
+    </Layout>
+);
 
 function App() {
     return (
         <Router>
-            <AnimatedRoutes />
+            <Routes>
+                {/* Public Portfolio Route */}
+                <Route path="/" element={<PortfolioHomePage />} />
+
+                {/* 2. We uncomment the Admin Routes! */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/admin/*" element={<AdminDashboard />} />
+            </Routes>
         </Router>
     );
 }

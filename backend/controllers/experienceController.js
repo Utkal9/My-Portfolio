@@ -1,37 +1,47 @@
 const Experience = require("../models/Experience");
 
-// @desc    Get all experience
+// @desc    Get all experiences
 // @route   GET /api/experience
-exports.getExperience = async (req, res) => {
+// @access  Public
+exports.getExperiences = async (req, res) => {
     try {
-        const experiences = await Experience.find().sort({ createdAt: -1 });
-        res.json(experiences);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+        // Sort by start date descending (newest first)
+        const experiences = await Experience.find().sort({ startDate: -1 });
+        res.status(200).json({
+            success: true,
+            count: experiences.length,
+            data: experiences,
+        });
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
     }
 };
 
-// @desc    Add experience
+// @desc    Add a new experience
 // @route   POST /api/experience
-// @access  Private/Admin
+// @access  Private (Admin Only)
 exports.addExperience = async (req, res) => {
     try {
-        const experience = new Experience(req.body);
-        const savedExperience = await experience.save();
-        res.status(201).json(savedExperience);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
+        const experience = await Experience.create(req.body);
+        res.status(201).json({ success: true, data: experience });
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
     }
 };
 
-// @desc    Delete experience
+// @desc    Delete an experience
 // @route   DELETE /api/experience/:id
-// @access  Private/Admin
+// @access  Private (Admin Only)
 exports.deleteExperience = async (req, res) => {
     try {
-        await Experience.findByIdAndDelete(req.params.id);
-        res.json({ message: "Experience deleted" });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+        const experience = await Experience.findByIdAndDelete(req.params.id);
+        if (!experience) {
+            return res
+                .status(404)
+                .json({ success: false, error: "Experience not found" });
+        }
+        res.status(200).json({ success: true, data: {} });
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
     }
 };

@@ -1,42 +1,58 @@
 const Message = require("../models/Message");
-const sendEmail = require("../utils/sendEmail");
 
-// @desc    Send a message & email notification
+// @desc    Submit a new contact message
 // @route   POST /api/contact
+// @access  Public
 exports.sendMessage = async (req, res) => {
-    const { name, email, message } = req.body;
-
     try {
-        // 1. Save to Database
-        const newMessage = new Message({ name, email, message });
-        await newMessage.save();
+        const { name, email, subject, message } = req.body;
 
-        // 2. Send Email Notification
-        try {
-            await sendEmail({ name, email, message });
-        } catch (emailError) {
-            console.error("Email sending failed:", emailError);
-            // We still return 201 because the message is saved in DB
-        }
+        const newMessage = await Message.create({
+            name,
+            email,
+            subject,
+            message,
+        });
 
         res.status(201).json({
             success: true,
             message: "Message sent successfully!",
+            data: newMessage,
         });
-    } catch (error) {
-        res.status(500).json({
-            message: "Server Error: Could not send message.",
-        });
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
     }
 };
 
-// @desc    Get all messages (for Admin Dashboard)
+// @desc    Get all messages
 // @route   GET /api/contact
+// @access  Private (Admin Only)
 exports.getMessages = async (req, res) => {
     try {
         const messages = await Message.find().sort({ createdAt: -1 });
-        res.json(messages);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(200).json({
+            success: true,
+            count: messages.length,
+            data: messages,
+        });
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
+    }
+};
+
+// @desc    Delete a message
+// @route   DELETE /api/contact/:id
+// @access  Private (Admin Only)
+exports.deleteMessage = async (req, res) => {
+    try {
+        const message = await Message.findByIdAndDelete(req.params.id);
+        if (!message) {
+            return res
+                .status(404)
+                .json({ success: false, error: "Message not found" });
+        }
+        res.status(200).json({ success: true, data: {} });
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
     }
 };

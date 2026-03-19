@@ -1,14 +1,17 @@
 const express = require("express");
 const router = express.Router();
 const {
-    getExperience,
+    getExperiences,
     addExperience,
     deleteExperience,
 } = require("../controllers/experienceController");
 const { protect } = require("../middleware/authMiddleware");
 
-router.route("/").get(getExperience).post(protect, addExperience);
+// Public route to view timeline
+router.get("/", getExperiences);
 
-router.route("/:id").delete(protect, deleteExperience);
+// Protected routes for Admin
+router.post("/", protect, addExperience);
+router.delete("/:id", protect, deleteExperience);
 
 module.exports = router;

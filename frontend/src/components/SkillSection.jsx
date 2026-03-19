@@ -1,54 +1,54 @@
-import React from "react";
-import usePortfolioStore from "../store/usePortfolioStore";
+import React, { useEffect, useMemo } from "react";
 import SkillBadge from "./SkillBadge";
-import AnimatedSection from "./ui/AnimatedSection";
+import useSkillStore from "../store/useSkillStore";
 
 const SkillSection = () => {
-    const { skills } = usePortfolioStore();
-    const categories = [
-        "Frontend",
-        "Backend",
-        "Programming",
-        "Database",
-        "Tools",
-    ];
+    const { skills, loading, fetchSkills } = useSkillStore();
+
+    useEffect(() => {
+        fetchSkills();
+    }, [fetchSkills]);
+
+    // Group skills by category for better UI organization
+    const groupedSkills = useMemo(() => {
+        return skills.reduce((acc, skill) => {
+            if (!acc[skill.category]) {
+                acc[skill.category] = [];
+            }
+            acc[skill.category].push(skill);
+            return acc;
+        }, {});
+    }, [skills]);
+
+    if (loading) return null; // Or a subtle loading skeleton
 
     return (
-        <section id="skills" className="py-24 bg-gray-950">
-            <div className="max-w-6xl mx-auto px-6">
-                <AnimatedSection className="text-center mb-16">
-                    <h2 className="text-4xl font-bold text-white mb-4">
-                        Technical Toolkit
+        <section id="skills" className="py-20 bg-white">
+            <div className="container mx-auto px-6 max-w-6xl">
+                <div className="text-center mb-16">
+                    <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                        Technical Skills
                     </h2>
-                    <p className="text-gray-400">
-                        The technologies and tools I use to bring ideas to life.
+                    <div className="w-16 h-1 bg-red-500 mx-auto rounded-full"></div>
+                    <p className="mt-4 text-gray-500 max-w-2xl mx-auto">
+                        A modular breakdown of my technical expertise and
+                        current tech stack.
                     </p>
-                </AnimatedSection>
+                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-                    {categories.map((cat) => {
-                        const filtered = skills.filter(
-                            (s) => s.category === cat,
-                        );
-                        if (filtered.length === 0) return null;
-
-                        return (
-                            <div key={cat} className="space-y-6">
-                                <h3 className="text-lg font-mono text-blue-500 flex items-center gap-2">
-                                    <span className="w-8 h-[1px] bg-blue-500/50"></span>
-                                    {cat}
-                                </h3>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                    {filtered.map((skill) => (
-                                        <SkillBadge
-                                            key={skill._id}
-                                            skill={skill}
-                                        />
-                                    ))}
-                                </div>
+                <div className="space-y-12">
+                    {Object.keys(groupedSkills).map((category) => (
+                        <div key={category} className="mb-8">
+                            <h3 className="text-xl font-bold text-gray-800 mb-6 border-b border-gray-100 pb-2">
+                                {category}
+                            </h3>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                {groupedSkills[category].map((skill) => (
+                                    <SkillBadge key={skill._id} skill={skill} />
+                                ))}
                             </div>
-                        );
-                    })}
+                        </div>
+                    ))}
                 </div>
             </div>
         </section>

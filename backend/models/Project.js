@@ -11,14 +11,9 @@ const projectSchema = new mongoose.Schema(
         cloudinaryPublicId: { type: String }, // Added for efficient Cloudinary management
         category: {
             type: String,
-            enum: [
-                "Web App",
-                "Mobile App",
-                "Machine Learning",
-                "UI/UX",
-                "Other",
-            ],
-            default: "Web App",
+            enum: ["Web Development", "Mobile App", "AI/ML", "Other"],
+            default: "Web Development",
+            trim: true, // This removes accidental spaces from the frontend!
         },
     },
     { timestamps: true },

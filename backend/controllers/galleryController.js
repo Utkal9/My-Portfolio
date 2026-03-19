@@ -1,42 +1,69 @@
 const Gallery = require("../models/Gallery");
-const cloudinary = require("../config/cloudinary");
+const cloudinary = require("../config/cloudinary"); // Assuming you use Cloudinary
 
-exports.getGallery = async (req, res) => {
+// @desc    Get all gallery images
+// @route   GET /api/gallery
+// @access  Public
+exports.getImages = async (req, res) => {
     try {
         const images = await Gallery.find().sort({ createdAt: -1 });
-        res.json(images);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(200).json({
+            success: true,
+            count: images.length,
+            data: images,
+        });
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
     }
 };
 
+// @desc    Upload new image
+// @route   POST /api/gallery
+// @access  Private (Admin Only)
 exports.uploadImage = async (req, res) => {
     try {
-        const { imageUrl, cloudinaryPublicId, title, category } = req.body;
-        const newImage = new Gallery({
-            imageUrl,
-            cloudinaryPublicId,
+        // Note: This assumes req.file exists via a multer upload middleware in the route
+        if (!req.file) {
+            return res
+                .status(400)
+                .json({ success: false, error: "Please upload a file" });
+        }
+
+        const { title, category } = req.body;
+
+        const newImage = await Gallery.create({
             title,
             category,
+            imageUrl: req.file.path, // Cloudinary URL assigned by multer-storage-cloudinary
+            publicId: req.file.filename, // Cloudinary public ID
         });
-        await newImage.save();
-        res.status(201).json(newImage);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
+
+        res.status(201).json({ success: true, data: newImage });
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
     }
 };
 
+// @desc    Delete image
+// @route   DELETE /api/gallery/:id
+// @access  Private (Admin Only)
 exports.deleteImage = async (req, res) => {
     try {
         const image = await Gallery.findById(req.params.id);
-        if (image) {
-            await cloudinary.uploader.destroy(image.cloudinaryPublicId);
-            await image.deleteOne();
-            res.json({ message: "Image deleted" });
-        } else {
-            res.status(404).json({ message: "Image not found" });
+        if (!image) {
+            return res
+                .status(404)
+                .json({ success: false, error: "Image not found" });
         }
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+
+        // Delete from Cloudinary first
+        await cloudinary.uploader.destroy(image.publicId);
+
+        // Delete from MongoDB
+        await image.deleteOne();
+
+        res.status(200).json({ success: true, data: {} });
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
     }
 };
