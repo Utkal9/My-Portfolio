@@ -14,7 +14,9 @@ export default function LeetcodeStats() {
         setError(false);
 
         try {
-            const res = await fetch(`/api/leetcode/${USERNAME}`);
+            const base =
+                import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+            const res = await fetch(`${base}/leetcode/${USERNAME}`);
             const data = await res.json();
 
             if (data && data.status === "success") {
