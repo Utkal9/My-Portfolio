@@ -1,76 +1,176 @@
-import React from "react";
-import ContactForm from "./ContactForm";
-import { Mail, Phone, MapPin } from "lucide-react";
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Send, Mail, Phone, MapPin, Github, Linkedin } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { contactAPI } from '../services/api.js';
 
-const ContactSection = () => {
-    return (
-        <section
-            id="contact"
-            className="py-20 bg-gray-50 relative overflow-hidden"
+const SOCIALS = [
+  { icon: <Github size={18}/>,   label: 'GitHub',   href: 'https://github.com/Utkal9' },
+  { icon: <Linkedin size={18}/>, label: 'LinkedIn', href: 'https://linkedin.com/in/utkal-behera59/' },
+];
+
+export default function ContactSection({ config }) {
+  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
+  const [loading, setLoading] = useState(false);
+
+  const contact = config?.contact || {};
+
+  const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.name || !form.email || !form.message) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    setLoading(true);
+    try {
+      await contactAPI.send(form);
+      toast.success('Message sent! I\'ll get back to you soon 🎉');
+      setForm({ name: '', email: '', subject: '', message: '' });
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const inputClass = `w-full px-4 py-3 rounded-xl text-sm
+    bg-slate-50 dark:bg-dark-card2
+    border border-slate-200 dark:border-dark-border
+    text-slate-800 dark:text-slate-200
+    placeholder:text-slate-400 dark:placeholder:text-slate-500
+    focus:outline-none focus:border-accent-blue dark:focus:border-accent-blue/60
+    transition-colors duration-200`;
+
+  return (
+    <section id="contact" className="py-20">
+      <div className="section-container">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-14"
         >
-            {/* Background Decorative Element */}
-            <div className="absolute top-0 right-0 w-96 h-96 bg-orange-400/5 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2"></div>
+          <span className="text-xs font-bold tracking-widest text-accent-blue uppercase mb-3 block">Contact</span>
+          <h2 className="section-heading text-slate-900 dark:text-white">
+            Let's <span className="grad-text">Connect</span>
+          </h2>
+          <p className="text-slate-500 dark:text-slate-400 max-w-lg mx-auto">
+            Open to internships, full-time roles, and collaborations. Let's build something great together.
+          </p>
+        </motion.div>
 
-            <div className="container mx-auto px-6 max-w-6xl relative z-10">
-                <div className="text-center mb-16">
-                    <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                        Get In Touch
-                    </h2>
-                    <div className="w-16 h-1 bg-red-500 mx-auto rounded-full"></div>
-                    <p className="mt-4 text-gray-500 max-w-2xl mx-auto">
-                        Whether you have a question, a project idea, or just
-                        want to say hi, I'll try my best to get back to you!
-                    </p>
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
+          {/* Left: Info */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="lg:col-span-2 flex flex-col gap-6"
+          >
+            {/* Contact details */}
+            {[
+              { icon: <Mail size={18}/>,    label: 'Email',    value: contact.email || 'utkalbehera59@gmail.com', href: `mailto:${contact.email}` },
+              { icon: <Phone size={18}/>,   label: 'Phone',    value: contact.phone || '+91-9692743044' },
+              { icon: <MapPin size={18}/>,  label: 'Location', value: contact.location || 'Phagwara, Punjab' },
+            ].map(item => (
+              <div key={item.label}
+                className="flex items-center gap-4 p-4 rounded-2xl
+                  bg-white dark:bg-dark-card
+                  border border-slate-100 dark:border-dark-border
+                  hover:border-accent-blue/30 transition-colors"
+              >
+                <div className="w-10 h-10 rounded-xl bg-accent-blue/10 dark:bg-accent-blue/10
+                  flex items-center justify-center text-accent-blue flex-shrink-0">
+                  {item.icon}
                 </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-                    {/* Direct Contact Info */}
-                    <div className="lg:col-span-4 space-y-8">
-                        <div className="bg-white p-6 rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 flex flex-col items-center text-center hover:shadow-[0_8px_30px_rgba(249,115,22,0.08)] transition-shadow">
-                            <div className="w-14 h-14 bg-orange-50 rounded-full flex items-center justify-center text-orange-500 mb-4">
-                                <Mail size={24} />
-                            </div>
-                            <h4 className="text-lg font-bold text-gray-900 mb-1">
-                                Email Me
-                            </h4>
-                            <p className="text-gray-500 text-sm">
-                                hello@example.com
-                            </p>
-                        </div>
-
-                        <div className="bg-white p-6 rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 flex flex-col items-center text-center hover:shadow-[0_8px_30px_rgba(249,115,22,0.08)] transition-shadow">
-                            <div className="w-14 h-14 bg-orange-50 rounded-full flex items-center justify-center text-orange-500 mb-4">
-                                <Phone size={24} />
-                            </div>
-                            <h4 className="text-lg font-bold text-gray-900 mb-1">
-                                Call Me
-                            </h4>
-                            <p className="text-gray-500 text-sm">
-                                +91 98765 43210
-                            </p>
-                        </div>
-
-                        <div className="bg-white p-6 rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 flex flex-col items-center text-center hover:shadow-[0_8px_30px_rgba(249,115,22,0.08)] transition-shadow">
-                            <div className="w-14 h-14 bg-orange-50 rounded-full flex items-center justify-center text-orange-500 mb-4">
-                                <MapPin size={24} />
-                            </div>
-                            <h4 className="text-lg font-bold text-gray-900 mb-1">
-                                Location
-                            </h4>
-                            <p className="text-gray-500 text-sm">
-                                Odisha, India
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Contact Form Container */}
-                    <div className="lg:col-span-8">
-                        <ContactForm />
-                    </div>
+                <div>
+                  <div className="text-xs text-slate-400 dark:text-slate-500 mb-0.5">{item.label}</div>
+                  {item.href
+                    ? <a href={item.href} className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-accent-blue transition-colors">{item.value}</a>
+                    : <div className="text-sm font-medium text-slate-700 dark:text-slate-300">{item.value}</div>
+                  }
                 </div>
+              </div>
+            ))}
+
+            {/* Socials */}
+            <div className="flex gap-3">
+              {SOCIALS.map(s => (
+                <a key={s.label} href={s.href} target="_blank" rel="noreferrer"
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl
+                    bg-slate-50 dark:bg-dark-card2
+                    border border-slate-100 dark:border-dark-border
+                    text-slate-600 dark:text-slate-400
+                    hover:border-accent-blue/30 hover:text-accent-blue
+                    transition-all text-xs font-medium">
+                  {s.icon} {s.label}
+                </a>
+              ))}
             </div>
-        </section>
-    );
-};
+          </motion.div>
 
-export default ContactSection;
+          {/* Right: Form */}
+          <motion.form
+            onSubmit={handleSubmit}
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="lg:col-span-3 p-8 rounded-3xl
+              bg-white dark:bg-dark-card
+              border border-slate-100 dark:border-dark-border
+              shadow-card-light dark:shadow-none"
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
+                  Name <span className="text-red-400">*</span>
+                </label>
+                <input name="name" value={form.name} onChange={handleChange}
+                  placeholder="Your name" className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
+                  Email <span className="text-red-400">*</span>
+                </label>
+                <input name="email" type="email" value={form.email} onChange={handleChange}
+                  placeholder="your@email.com" className={inputClass} />
+              </div>
+            </div>
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">Subject</label>
+              <input name="subject" value={form.subject} onChange={handleChange}
+                placeholder="What's this about?" className={inputClass} />
+            </div>
+            <div className="mb-6">
+              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
+                Message <span className="text-red-400">*</span>
+              </label>
+              <textarea name="message" value={form.message} onChange={handleChange}
+                placeholder="Your message..." rows={5}
+                className={`${inputClass} resize-none`} />
+            </div>
+            <button
+              type="submit" disabled={loading}
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl
+                bg-grad-main text-white font-semibold text-sm
+                shadow-glow-blue hover:shadow-glow-purple
+                transition-all duration-300 hover:scale-[1.02]
+                disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <><Send size={16}/> Send Message</>
+              )}
+            </button>
+          </motion.form>
+        </div>
+      </div>
+    </section>
+  );
+}

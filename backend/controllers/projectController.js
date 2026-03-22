@@ -1,62 +1,141 @@
-const Project = require("../models/Project");
-const cloudinary = require("../config/cloudinary");
+import { Project } from "../models/index.js";
+import { uploadBuffer, deleteAsset } from "../config/cloudinary.js";
 
-// @desc    Get all projects
-exports.getProjects = async (req, res) => {
+// GET /api/projects  (public)
+export const getProjects = async (req, res) => {
     try {
-        const projects = await Project.find().sort({ createdAt: -1 });
-        res.json(projects);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-
-// @desc    Create project
-exports.createProject = async (req, res) => {
-    try {
-        const {
-            title,
-            description,
-            techStack,
-            githubLink,
-            liveLink,
-            imageURL,
-            cloudinaryPublicId,
-            category,
-        } = req.body;
-        const project = new Project({
-            title,
-            description,
-            techStack,
-            githubLink,
-            liveLink,
-            imageURL,
-            cloudinaryPublicId,
-            category,
+        const { category, featured } = req.query;
+        const filter = { visible: true };
+        if (category) filter.category = category;
+        if (featured === "true") filter.featured = true;
+        const projects = await Project.find(filter).sort({
+            order: 1,
+            createdAt: -1,
         });
-        const savedProject = await project.save();
-        res.status(201).json(savedProject);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.json({ success: true, data: projects });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
     }
 };
 
-// @desc    Delete project & remove image from Cloudinary
-exports.deleteProject = async (req, res) => {
+// GET /api/projects/all  (admin)
+export const getAllProjects = async (req, res) => {
+    try {
+        const projects = await Project.find().sort({ order: 1, createdAt: -1 });
+        res.json({ success: true, data: projects });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// GET /api/projects/:id
+export const getProject = async (req, res) => {
     try {
         const project = await Project.findById(req.params.id);
         if (!project)
-            return res.status(404).json({ message: "Project not found" });
-
-        // 1. Delete image from Cloudinary if publicId exists
-        if (project.cloudinaryPublicId) {
-            await cloudinary.uploader.destroy(project.cloudinaryPublicId);
-        }
-
-        // 2. Delete from MongoDB
-        await project.deleteOne();
-        res.json({ message: "Project and associated image removed" });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+            return res
+                .status(404)
+                .json({ success: false, message: "Not found" });
+        res.json({ success: true, data: project });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
     }
 };
+
+// POST /api/projects  (admin)
+export const createProject = async (req, res) => {
+    try {
+        const images = [];
+        if (req.files?.length) {
+            for (const file of req.files) {
+                const result = await uploadBuffer(
+                    file.buffer,
+                    "portfolio/projects",
+                );
+                images.push({ url: result.url, publicId: result.public_id });
+            }
+        }
+        const techStack = parseTechStack(req.body.techStack);
+        const project = await Project.create({
+            ...req.body,
+            techStack,
+            images,
+        });
+        res.status(201).json({ success: true, data: project });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// PUT /api/projects/:id  (admin)
+export const updateProject = async (req, res) => {
+    try {
+        const updates = { ...req.body };
+        if (req.files?.length) {
+            const images = [];
+            for (const file of req.files) {
+                const result = await uploadBuffer(
+                    file.buffer,
+                    "portfolio/projects",
+                );
+                images.push({ url: result.url, publicId: result.public_id });
+            }
+            updates.images = images;
+        }
+        updates.techStack = parseTechStack(updates.techStack);
+        const project = await Project.findByIdAndUpdate(
+            req.params.id,
+            updates,
+            { new: true, runValidators: true },
+        );
+        if (!project)
+            return res
+                .status(404)
+                .json({ success: false, message: "Not found" });
+        res.json({ success: true, data: project });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// DELETE /api/projects/:id  (admin)
+export const deleteProject = async (req, res) => {
+    try {
+        const project = await Project.findById(req.params.id);
+        if (!project)
+            return res
+                .status(404)
+                .json({ success: false, message: "Not found" });
+        for (const img of project.images) {
+            await deleteAsset(img.publicId);
+        }
+        await project.deleteOne();
+        res.json({ success: true, message: "Project deleted" });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// PATCH /api/projects/reorder  (admin)
+export const reorderProjects = async (req, res) => {
+    try {
+        const { orders } = req.body;
+        await Promise.all(
+            orders.map(({ id, order }) =>
+                Project.findByIdAndUpdate(id, { order }),
+            ),
+        );
+        res.json({ success: true, message: "Reordered" });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+function parseTechStack(raw) {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    return raw
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+}

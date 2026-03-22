@@ -1,17 +1,9 @@
-const express = require("express");
+import express from 'express';
+import { sendMessage, getMessages, markRead, deleteMessage } from '../controllers/contactController.js';
+import auth from '../middleware/authMiddleware.js';
 const router = express.Router();
-const {
-    sendMessage,
-    getMessages,
-    deleteMessage,
-} = require("../controllers/contactController");
-const { protect } = require("../middleware/authMiddleware"); // Assuming you have this middleware
-
-// Public route for visitors to send messages
-router.post("/", sendMessage);
-
-// Protected routes for Admin dashboard
-router.get("/", protect, getMessages);
-router.delete("/:id", protect, deleteMessage);
-
-module.exports = router;
+router.post('/', sendMessage);
+router.get('/messages', auth, getMessages);
+router.patch('/messages/:id/read', auth, markRead);
+router.delete('/messages/:id', auth, deleteMessage);
+export default router;

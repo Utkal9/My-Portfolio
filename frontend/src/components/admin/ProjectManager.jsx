@@ -1,188 +1,818 @@
-import React, { useState, useEffect } from "react";
-import { Plus, Trash2 } from "lucide-react";
-import useProjectStore from "../../store/useProjectStore";
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+    Plus,
+    Edit2,
+    Trash2,
+    Star,
+    X,
+    Upload,
+    ExternalLink,
+    Github,
+    Play,
+} from "lucide-react";
+import toast from "react-hot-toast";
+import { useProjectStore } from "../../store/index.js";
 
-const ProjectManager = () => {
-    const { projects, fetchProjects, addProject, deleteProject } =
-        useProjectStore();
-    const [showForm, setShowForm] = useState(false);
+const EMPTY = {
+    title: "",
+    description: "",
+    tagline: "",
+    problem: "",
+    features: "",
+    techStack: "",
+    liveUrl: "",
+    githubUrl: "",
+    videoUrl: "",
+    category: "Web",
+    featured: false,
+    startDate: "",
+    endDate: "",
+};
 
-    // Form State
-    const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
-    const [category, setCategory] = useState("Web Development");
-    const [techStack, setTechStack] = useState("");
-
-    useEffect(() => {
-        fetchProjects();
-    }, [fetchProjects]);
-
-    const handleAdd = async (e) => {
-        e.preventDefault();
-        const techArray = techStack.split(",").map((t) => t.trim());
-
-        // Assuming addProject handles the API call internally
-        await addProject({
-            title,
-            description,
-            category,
-            techStack: techArray,
-        });
-
-        setShowForm(false);
-        setTitle("");
-        setDescription("");
-        setTechStack("");
-    };
-
+// ── Live preview card — matches portfolio exactly ─────────────────────
+function PreviewCard({ project }) {
     return (
-        <div className="animate-fade-in">
-            <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">
-                    Manage Projects
-                </h2>
-                <button
-                    onClick={() => setShowForm(!showForm)}
-                    className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition-colors shadow-sm"
+        <div className="rounded-2xl overflow-hidden bg-dark-bg border border-dark-border">
+            {/* Image */}
+            <div
+                className="h-40 bg-gradient-to-br from-blue-950/50 to-indigo-950/50
+        flex items-center justify-center relative overflow-hidden"
+            >
+                {project.images?.[0]?.url ? (
+                    <img
+                        src={project.images[0].url}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-cover opacity-60"
+                    />
+                ) : null}
+                <div className="absolute inset-0 bg-gradient-to-t from-dark-bg/90 to-transparent" />
+                <span className="text-5xl z-10 opacity-30">
+                    {!project.images?.[0]?.url ? "💼" : ""}
+                </span>
+
+                {project.featured && (
+                    <div
+                        className="absolute top-3 left-3 flex items-center gap-1 px-2 py-0.5
+            rounded-full bg-amber-400/20 border border-amber-400/30
+            text-amber-300 text-[9px] font-bold z-10"
+                    >
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                        Featured
+                    </div>
+                )}
+                {project.liveUrl && (
+                    <div
+                        className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5
+            rounded-full bg-green-500/10 border border-green-500/20
+            text-green-400 text-[9px] font-bold z-10"
+                    >
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                        Live
+                    </div>
+                )}
+                <span
+                    className="absolute bottom-3 left-3 text-[9px] px-2 py-0.5
+          rounded-full bg-black/50 text-slate-400 border border-white/10 z-10"
                 >
-                    <Plus size={18} /> Add New Project
-                </button>
+                    {project.category || "Web"}
+                </span>
+                {project.videoUrl && (
+                    <div
+                        className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-0.5
+            rounded-full bg-red-500/80 text-white text-[9px] font-bold z-10"
+                    >
+                        <Play size={8} fill="white" /> Demo
+                    </div>
+                )}
             </div>
 
-            {/* Add Project Form */}
-            {showForm && (
-                <form
-                    onSubmit={handleAdd}
-                    className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mb-8 space-y-4"
-                >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Project Title
-                            </label>
-                            <input
-                                type="text"
-                                required
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 bg-gray-50"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Category
-                            </label>
-                            <select
-                                value={category}
-                                onChange={(e) => setCategory(e.target.value)}
-                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 bg-gray-50"
-                            >
-                                <option value="Web Development">
-                                    Web Development
-                                </option>
-                                <option value="Mobile App">Mobile App</option>
-                                <option value="AI/ML">AI/ML</option>
-                                <option value="Other">Other</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Tech Stack (comma separated)
-                        </label>
-                        <input
-                            type="text"
-                            required
-                            value={techStack}
-                            onChange={(e) => setTechStack(e.target.value)}
-                            placeholder="React, Node.js, MongoDB"
-                            className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 bg-gray-50"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Description
-                        </label>
-                        <textarea
-                            required
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            rows="3"
-                            className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 bg-gray-50"
-                        ></textarea>
-                    </div>
-                    <div className="flex justify-end gap-3 mt-4">
-                        <button
-                            type="button"
-                            onClick={() => setShowForm(false)}
-                            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            className="px-6 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-black transition-colors"
-                        >
-                            Save Project
-                        </button>
-                    </div>
-                </form>
-            )}
+            {/* Body */}
+            <div className="p-4">
+                <div className="text-[9px] font-bold tracking-wider text-accent-blue uppercase mb-1">
+                    {project.category || "Web"}
+                    {project.startDate &&
+                        ` · ${project.startDate}${project.endDate ? `–${project.endDate}` : ""}`}
+                </div>
+                <h3 className="font-extrabold text-white text-sm leading-tight mb-1.5">
+                    {project.title || "Project Title"}
+                </h3>
+                <p className="text-[11px] text-slate-500 leading-relaxed mb-3 line-clamp-2">
+                    {project.tagline ||
+                        project.description ||
+                        "Your tagline appears here..."}
+                </p>
 
-            {/* Projects List */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="bg-gray-50 border-b border-gray-100">
-                            <th className="p-4 text-sm font-semibold text-gray-600">
-                                Project Name
-                            </th>
-                            <th className="p-4 text-sm font-semibold text-gray-600">
-                                Category
-                            </th>
-                            <th className="p-4 text-sm font-semibold text-gray-600">
-                                Tech Stack
-                            </th>
-                            <th className="p-4 text-sm font-semibold text-gray-600 text-right">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {projects.map((project) => (
-                            <tr
-                                key={project._id}
-                                className="border-b border-gray-50 hover:bg-orange-50/30 transition-colors"
-                            >
-                                <td className="p-4 font-medium text-gray-900">
-                                    {project.title}
-                                </td>
-                                <td className="p-4 text-sm text-gray-600">
-                                    <span className="bg-gray-100 px-2 py-1 rounded-md text-xs font-semibold">
-                                        {project.category}
-                                    </span>
-                                </td>
-                                <td className="p-4 text-sm text-gray-500">
-                                    {project.techStack.slice(0, 3).join(", ")}
-                                    ...
-                                </td>
-                                <td className="p-4 text-right">
-                                    <button
-                                        onClick={() =>
-                                            deleteProject(project._id)
-                                        }
-                                        className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-lg transition-colors"
-                                    >
-                                        <Trash2 size={18} />
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                {/* Problem preview */}
+                {project.problem && (
+                    <div
+                        className="text-[10px] text-slate-500 italic mb-3
+            pl-2 border-l-2 border-accent-blue/30 line-clamp-1"
+                    >
+                        {project.problem}
+                    </div>
+                )}
+
+                {/* Features count */}
+                {(project.features || "").split(/[\n,]/).filter((f) => f.trim())
+                    .length > 0 && (
+                    <p className="text-[9px] text-slate-600 mb-2">
+                        ✨{" "}
+                        {
+                            (project.features || "")
+                                .split(/[\n,]/)
+                                .filter((f) => f.trim()).length
+                        }{" "}
+                        features listed
+                    </p>
+                )}
+
+                {/* Tech stack */}
+                <div className="flex flex-wrap gap-1 mb-3">
+                    {(project.techStack || "")
+                        .split(",")
+                        .slice(0, 4)
+                        .map((t, i) =>
+                            t.trim() ? (
+                                <span
+                                    key={i}
+                                    className="text-[9px] px-2 py-0.5 rounded-lg font-bold
+                bg-accent-blue/10 text-accent-blue border border-accent-blue/20"
+                                >
+                                    {t.trim()}
+                                </span>
+                            ) : null,
+                        )}
+                </div>
+
+                {/* Action buttons preview */}
+                <div className="flex gap-2 pt-3 border-t border-dark-border">
+                    {project.liveUrl && (
+                        <div
+                            className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-xl
+              bg-accent-blue/10 text-accent-blue border border-accent-blue/20 text-[9px] font-bold"
+                        >
+                            <ExternalLink size={9} /> Demo
+                        </div>
+                    )}
+                    {project.githubUrl && (
+                        <div
+                            className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-xl
+              bg-dark-card border border-dark-border text-slate-500 text-[9px] font-bold"
+                        >
+                            <Github size={9} /> Code
+                        </div>
+                    )}
+                    {project.videoUrl && (
+                        <div
+                            className="flex items-center justify-center px-2 py-1.5 rounded-xl
+              bg-red-500/10 border border-red-500/20 text-red-400 text-[9px]"
+                        >
+                            <Play size={9} fill="currentColor" />
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
-};
+}
 
-export default ProjectManager;
+// ── Project form ──────────────────────────────────────────────────────
+function ProjectForm({ initial = EMPTY, onSave, onCancel, loading }) {
+    const [form, setForm] = useState({
+        ...EMPTY,
+        ...initial,
+        techStack: initial.techStack?.join?.(", ") || initial.techStack || "",
+        features: initial.features?.join?.("\n") || initial.features || "",
+    });
+    const [imageFiles, setImageFiles] = useState([]);
+    const [previews, setPreviews] = useState(
+        initial.images?.map((i) => i.url) || [],
+    );
+
+    const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+    const handleImages = (e) => {
+        const files = Array.from(e.target.files);
+        setImageFiles(files);
+        setPreviews(files.map((f) => URL.createObjectURL(f)));
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        const fd = new FormData();
+        Object.entries(form).forEach(([k, v]) => {
+            if (!["images", "videoUrl", "features", "techStack"].includes(k))
+                fd.append(k, v);
+        });
+        (form.techStack || "")
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean)
+            .forEach((t) => fd.append("techStack", t));
+        (form.features || "")
+            .split(/[\n,]/)
+            .map((f) => f.trim())
+            .filter(Boolean)
+            .forEach((f) => fd.append("features", f));
+        if (form.videoUrl?.trim()) fd.append("videoUrl", form.videoUrl.trim());
+        imageFiles.forEach((f) => fd.append("images", f));
+        onSave(fd);
+    };
+
+    const inputClass = `w-full px-3 py-2.5 rounded-xl text-sm bg-dark-bg
+    border border-dark-border text-slate-200 placeholder:text-slate-500
+    focus:outline-none focus:border-accent-blue transition-colors`;
+
+    const Label = ({ text, hint }) => (
+        <div className="mb-1.5">
+            <label className="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                {text}
+            </label>
+            {hint && <p className="text-[9px] text-slate-600 mt-0.5">{hint}</p>}
+        </div>
+    );
+
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* LEFT — form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                    <div>
+                        <Label text="Title *" />
+                        <input
+                            value={form.title}
+                            onChange={(e) => set("title", e.target.value)}
+                            required
+                            className={inputClass}
+                            placeholder="Project name"
+                        />
+                    </div>
+                    <div>
+                        <Label text="Category" />
+                        <select
+                            value={form.category}
+                            onChange={(e) => set("category", e.target.value)}
+                            className={inputClass}
+                        >
+                            {[
+                                "Web",
+                                "Mobile",
+                                "AI/ML",
+                                "DevOps",
+                                "Open Source",
+                            ].map((c) => (
+                                <option key={c}>{c}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <Label
+                        text="One-line Tagline"
+                        hint="Punchy description shown on card — be specific"
+                    />
+                    <input
+                        value={form.tagline || ""}
+                        onChange={(e) => set("tagline", e.target.value)}
+                        className={inputClass}
+                        placeholder="Full-stack platform with real-time messaging and video calls"
+                    />
+                </div>
+
+                <div>
+                    <Label
+                        text="Description"
+                        hint="Full description shown in modal"
+                    />
+                    <textarea
+                        value={form.description}
+                        onChange={(e) => set("description", e.target.value)}
+                        rows={2}
+                        className={`${inputClass} resize-none`}
+                        placeholder="Detailed project description..."
+                    />
+                </div>
+
+                <div>
+                    <Label
+                        text="💡 Problem → Solution"
+                        hint="Shown as highlighted block in modal"
+                    />
+                    <textarea
+                        value={form.problem || ""}
+                        onChange={(e) => set("problem", e.target.value)}
+                        rows={2}
+                        className={`${inputClass} resize-none`}
+                        placeholder="Problem → how your project solves it"
+                    />
+                </div>
+
+                <div>
+                    <Label
+                        text="✨ Key Features"
+                        hint="One per line — shown in modal as checklist"
+                    />
+                    <textarea
+                        value={form.features || ""}
+                        onChange={(e) => set("features", e.target.value)}
+                        rows={5}
+                        className={`${inputClass} resize-none font-mono text-[11px]`}
+                        placeholder={
+                            "Real-time messaging\nVideo calls (WebRTC)\nAuth system\nAdmin dashboard"
+                        }
+                    />
+                    {form.features && (
+                        <p className="text-[9px] text-slate-600 mt-1">
+                            {
+                                form.features
+                                    .split(/[\n,]/)
+                                    .filter((f) => f.trim()).length
+                            }{" "}
+                            features added
+                        </p>
+                    )}
+                </div>
+
+                <div>
+                    <Label text="Tech Stack" hint="Comma-separated" />
+                    <input
+                        value={form.techStack}
+                        onChange={(e) => set("techStack", e.target.value)}
+                        className={inputClass}
+                        placeholder="React, Node.js, MongoDB..."
+                    />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                    <div>
+                        <Label text="Live URL" />
+                        <input
+                            value={form.liveUrl}
+                            onChange={(e) => set("liveUrl", e.target.value)}
+                            className={inputClass}
+                            placeholder="https://..."
+                        />
+                    </div>
+                    <div>
+                        <Label text="GitHub URL" />
+                        <input
+                            value={form.githubUrl}
+                            onChange={(e) => set("githubUrl", e.target.value)}
+                            className={inputClass}
+                            placeholder="https://github.com/..."
+                        />
+                    </div>
+                </div>
+
+                <div>
+                    <Label
+                        text="Demo Video URL"
+                        hint="YouTube / Loom / Vimeo"
+                    />
+                    <input
+                        value={form.videoUrl || ""}
+                        onChange={(e) => set("videoUrl", e.target.value)}
+                        className={inputClass}
+                        placeholder="https://youtube.com/watch?v=..."
+                    />
+                    {form.videoUrl && (
+                        <p className="text-[9px] text-green-400 mt-1">
+                            ✓ Video added — play button will show on card
+                        </p>
+                    )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                    <div>
+                        <Label text="Start Date" />
+                        <input
+                            value={form.startDate || ""}
+                            onChange={(e) => set("startDate", e.target.value)}
+                            className={inputClass}
+                            placeholder="Sep 2025"
+                        />
+                    </div>
+                    <div>
+                        <Label text="End Date" />
+                        <input
+                            value={form.endDate || ""}
+                            onChange={(e) => set("endDate", e.target.value)}
+                            className={inputClass}
+                            placeholder="Dec 2025"
+                        />
+                    </div>
+                </div>
+
+                <div>
+                    <Label
+                        text="Project Images"
+                        hint="Uploaded to Cloudinary"
+                    />
+                    <label
+                        className="flex items-center justify-center gap-2
+            border-2 border-dashed border-dark-border rounded-xl p-4
+            text-slate-500 hover:border-accent-blue/50 hover:text-accent-blue
+            transition-all cursor-pointer text-sm"
+                    >
+                        <Upload size={15} /> Click to upload images
+                        <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            onChange={handleImages}
+                            className="hidden"
+                        />
+                    </label>
+                    {previews.length > 0 && (
+                        <div className="flex gap-2 mt-2 flex-wrap">
+                            {previews.map((p, i) => (
+                                <img
+                                    key={i}
+                                    src={p}
+                                    alt=""
+                                    className="w-16 h-12 object-cover rounded-lg border border-dark-border"
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex items-center gap-3 py-1">
+                    <button
+                        type="button"
+                        onClick={() => set("featured", !form.featured)}
+                        className={`w-10 h-5 rounded-full transition-all relative
+              ${form.featured ? "bg-accent-blue" : "bg-dark-border"}`}
+                    >
+                        <div
+                            className={`absolute top-0.5 w-4 h-4 bg-white rounded-full
+              transition-all ${form.featured ? "left-5" : "left-0.5"}`}
+                        />
+                    </button>
+                    <div>
+                        <span className="text-sm text-slate-300 font-semibold">
+                            Featured project
+                        </span>
+                        <p className="text-[9px] text-slate-600">
+                            Appears first in the projects grid
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex gap-3 pt-2 border-t border-dark-border">
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="flex-1 py-2.5 rounded-xl border border-dark-border
+              text-slate-400 hover:text-white text-sm font-medium transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="flex-1 py-2.5 rounded-xl bg-grad-main text-white
+              font-semibold text-sm hover:shadow-glow-blue transition-all disabled:opacity-60"
+                    >
+                        {loading ? "Saving..." : "Save Project"}
+                    </button>
+                </div>
+            </form>
+
+            {/* RIGHT — live preview */}
+            <div className="lg:sticky lg:top-6">
+                <div className="mb-3">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
+                        Live Preview
+                    </p>
+                    <p className="text-[10px] text-slate-600">
+                        Updates as you type — exactly as visitors see it
+                    </p>
+                </div>
+                <PreviewCard project={form} />
+
+                {/* Completeness */}
+                <div className="mt-4 p-3 bg-dark-bg rounded-xl border border-dark-border">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                        Completeness
+                    </p>
+                    {[
+                        { label: "Title", done: !!form.title },
+                        { label: "Tagline", done: !!form.tagline },
+                        { label: "Problem", done: !!form.problem },
+                        {
+                            label: "Features",
+                            done:
+                                form.features
+                                    ?.split(/[\n,]/)
+                                    .filter((f) => f.trim()).length > 0,
+                        },
+                        {
+                            label: "Tech Stack",
+                            done:
+                                form.techStack
+                                    ?.split(",")
+                                    .filter((t) => t.trim()).length > 0,
+                        },
+                        { label: "Live URL", done: !!form.liveUrl },
+                        { label: "GitHub", done: !!form.githubUrl },
+                        {
+                            label: "Image",
+                            done:
+                                !!form.images?.[0]?.url ||
+                                imageFiles.length > 0,
+                        },
+                    ].map((item) => (
+                        <div
+                            key={item.label}
+                            className="flex items-center justify-between py-0.5"
+                        >
+                            <span className="text-[10px] text-slate-500">
+                                {item.label}
+                            </span>
+                            <span
+                                className={`text-[9px] font-bold ${item.done ? "text-green-400" : "text-slate-700"}`}
+                            >
+                                {item.done ? "✓" : "○"}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ── Main ──────────────────────────────────────────────────────────────
+export default function ProjectManager() {
+    const {
+        projects,
+        fetchAdmin,
+        create,
+        update,
+        delete: del,
+    } = useProjectStore();
+    const [editing, setEditing] = useState(null);
+    const [saving, setSaving] = useState(false);
+    const [delId, setDelId] = useState(null);
+
+    useEffect(() => {
+        fetchAdmin();
+    }, []);
+
+    const handleSave = async (fd) => {
+        setSaving(true);
+        try {
+            if (editing === "new") {
+                await create(fd);
+                toast.success("Project created!");
+            } else {
+                await update(editing._id, fd);
+                toast.success("Project updated!");
+            }
+            setEditing(null);
+        } catch (e) {
+            toast.error(e.response?.data?.message || "Error saving");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleDelete = async (id) => {
+        try {
+            await del(id);
+            toast.success("Deleted");
+        } catch {
+            toast.error("Error");
+        }
+        setDelId(null);
+    };
+
+    const sorted = [...projects].sort((a, b) => {
+        if (a.featured && !b.featured) return -1;
+        if (!a.featured && b.featured) return 1;
+        return 0;
+    });
+
+    return (
+        <div>
+            <div className="flex items-center justify-between mb-6">
+                <div>
+                    <h2 className="text-xl font-bold text-white">Projects</h2>
+                    <p className="text-sm text-slate-500">
+                        {projects.length} projects ·{" "}
+                        {projects.filter((p) => p.featured).length} featured
+                    </p>
+                </div>
+                <button
+                    onClick={() => setEditing("new")}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl
+            bg-grad-main text-white text-sm font-semibold hover:shadow-glow-blue transition-all"
+                >
+                    <Plus size={16} /> Add Project
+                </button>
+            </div>
+
+            <AnimatePresence>
+                {editing && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="bg-dark-card border border-dark-border rounded-2xl p-6 mb-6 overflow-hidden"
+                    >
+                        <div className="flex items-center justify-between mb-5">
+                            <div>
+                                <h3 className="font-bold text-white">
+                                    {editing === "new"
+                                        ? "Add New Project"
+                                        : `Edit — ${editing.title}`}
+                                </h3>
+                                <p className="text-[10px] text-slate-500 mt-0.5">
+                                    Right panel updates live as you type
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setEditing(null)}
+                                className="text-slate-500 hover:text-white transition-colors"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+                        <ProjectForm
+                            initial={editing === "new" ? EMPTY : editing}
+                            onSave={handleSave}
+                            onCancel={() => setEditing(null)}
+                            loading={saving}
+                        />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Projects grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {sorted.map((p) => (
+                    <motion.div
+                        key={p._id}
+                        layout
+                        className={`bg-dark-card rounded-2xl overflow-hidden transition-all
+              hover:border-accent-blue/30 group
+              ${p.featured ? "border border-accent-blue/30" : "border border-dark-border"}`}
+                    >
+                        {/* Image */}
+                        <div className="h-36 bg-dark-bg2 relative overflow-hidden flex items-center justify-center">
+                            {p.images?.[0]?.url ? (
+                                <img
+                                    src={p.images[0].url}
+                                    alt={p.title}
+                                    className="w-full h-full object-cover opacity-70"
+                                />
+                            ) : (
+                                <span className="text-4xl opacity-20">💼</span>
+                            )}
+                            <div className="absolute inset-0 bg-gradient-to-t from-dark-card/80 to-transparent" />
+                            <div className="absolute top-2 left-2 flex gap-1.5 z-10">
+                                {p.featured && (
+                                    <span
+                                        className="flex items-center gap-1 px-2 py-0.5 rounded-full
+                    bg-amber-400/20 border border-amber-400/30 text-amber-300 text-[9px] font-bold"
+                                    >
+                                        <Star size={7} fill="currentColor" />{" "}
+                                        Featured
+                                    </span>
+                                )}
+                                {p.liveUrl && (
+                                    <span
+                                        className="flex items-center gap-1 px-2 py-0.5 rounded-full
+                    bg-green-500/10 border border-green-500/20 text-green-400 text-[9px] font-bold"
+                                    >
+                                        <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse" />{" "}
+                                        Live
+                                    </span>
+                                )}
+                                {p.videoUrl && (
+                                    <span
+                                        className="px-2 py-0.5 rounded-full bg-red-500/15
+                    border border-red-500/20 text-red-400 text-[9px] font-bold"
+                                    >
+                                        ▶
+                                    </span>
+                                )}
+                            </div>
+                            <span
+                                className="absolute bottom-2 right-2 text-[9px] px-2 py-0.5
+                rounded-full bg-black/50 text-slate-400 border border-white/10 z-10"
+                            >
+                                {p.category}
+                            </span>
+                        </div>
+
+                        <div className="p-4">
+                            <div className="text-[9px] font-bold text-accent-blue uppercase tracking-wider mb-1">
+                                {p.startDate}
+                                {p.endDate ? ` – ${p.endDate}` : ""}
+                            </div>
+                            <h4 className="font-bold text-white text-sm mb-1">
+                                {p.title}
+                            </h4>
+                            {p.tagline && (
+                                <p className="text-[10px] text-accent-blue mb-1.5 line-clamp-1">
+                                    {p.tagline}
+                                </p>
+                            )}
+                            {p.problem && (
+                                <p
+                                    className="text-[10px] text-slate-500 italic mb-2
+                  pl-2 border-l-2 border-accent-blue/30 line-clamp-1"
+                                >
+                                    {p.problem}
+                                </p>
+                            )}
+                            {p.features?.length > 0 && (
+                                <p className="text-[9px] text-slate-600 mb-2">
+                                    ✨ {p.features.length} features listed
+                                </p>
+                            )}
+                            <div className="flex flex-wrap gap-1 mb-3">
+                                {p.techStack?.slice(0, 4).map((t) => (
+                                    <span
+                                        key={t}
+                                        className="text-[9px] px-2 py-0.5 rounded-full
+                    bg-accent-blue/10 text-accent-blue border border-accent-blue/20"
+                                    >
+                                        {t}
+                                    </span>
+                                ))}
+                                {p.techStack?.length > 4 && (
+                                    <span
+                                        className="text-[9px] px-2 py-0.5 rounded-full
+                    bg-dark-bg text-slate-500"
+                                    >
+                                        +{p.techStack.length - 4}
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setEditing(p)}
+                                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl
+                    border border-dark-border text-slate-400 hover:text-accent-blue
+                    hover:border-accent-blue/30 text-xs font-medium transition-all"
+                                >
+                                    <Edit2 size={12} /> Edit
+                                </button>
+                                <button
+                                    onClick={() => setDelId(p._id)}
+                                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl
+                    border border-dark-border text-slate-400 hover:text-red-400
+                    hover:border-red-400/30 text-xs font-medium transition-all"
+                                >
+                                    <Trash2 size={12} /> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                ))}
+            </div>
+
+            {/* Delete confirm */}
+            <AnimatePresence>
+                {delId && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+                    >
+                        <div className="bg-dark-card border border-dark-border rounded-2xl p-6 max-w-sm w-full">
+                            <h3 className="font-bold text-white mb-2">
+                                Delete Project?
+                            </h3>
+                            <p className="text-sm text-slate-400 mb-5">
+                                Deletes images from Cloudinary too. Cannot be
+                                undone.
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setDelId(null)}
+                                    className="flex-1 py-2.5 rounded-xl border border-dark-border text-slate-400 text-sm"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => handleDelete(delId)}
+                                    className="flex-1 py-2.5 rounded-xl bg-red-500/20 border border-red-500/30
+                    text-red-400 text-sm font-semibold"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+}

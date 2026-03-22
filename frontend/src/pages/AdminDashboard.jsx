@@ -1,124 +1,275 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Routes, Route, NavLink, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
     LayoutDashboard,
-    Code,
-    Wrench,
+    FolderKanban,
+    Zap,
     Briefcase,
+    GraduationCap,
     MessageSquare,
+    Image,
+    FileText,
+    Link2,
+    Settings,
     LogOut,
+    Github,
+    Code2,
+    Menu,
+    X,
+    Bell,
 } from "lucide-react";
+import { useAuthStore, useMessageStore } from "../store/index.js";
 
-// We will import these components in the next steps
-import DashboardStats from "../components/admin/DashboardStats";
-import ProjectManager from "../components/admin/ProjectManager";
-import SkillManager from "../components/admin/SkillManager";
-// import ExperienceManager from '../components/admin/ExperienceManager';
-// import MessageViewer from '../components/admin/MessageViewer';
+// Admin sub-pages
+import DashboardStats from "../components/admin/DashboardStats.jsx";
+import ProjectManager from "../components/admin/ProjectManager.jsx";
+import SkillManager from "../components/admin/SkillManager.jsx";
+import ExperienceManager from "../components/admin/ExperienceManager.jsx";
+import MessageViewer from "../components/admin/MessageViewer.jsx";
+import GalleryManager from "../components/admin/GalleryManager.jsx";
+import SocialManager from "../components/admin/SocialManager.jsx";
+import HeroEditor from "../components/admin/HeroEditor.jsx";
+import ResumeManager from "../components/admin/ResumeManager.jsx";
 
-const AdminDashboard = () => {
-    const [activeTab, setActiveTab] = useState("overview");
+const NAV = [
+    {
+        to: "/admin",
+        icon: <LayoutDashboard size={17} />,
+        label: "Dashboard",
+        end: true,
+    },
+    { to: "/admin/hero", icon: <Settings size={17} />, label: "Site Config" },
+    {
+        to: "/admin/projects",
+        icon: <FolderKanban size={17} />,
+        label: "Projects",
+    },
+    { to: "/admin/skills", icon: <Zap size={17} />, label: "Skills" },
+    {
+        to: "/admin/experience",
+        icon: <Briefcase size={17} />,
+        label: "Experience",
+    },
+    {
+        to: "/admin/messages",
+        icon: <MessageSquare size={17} />,
+        label: "Messages",
+        badge: true,
+    },
+    { to: "/admin/gallery", icon: <Image size={17} />, label: "Media" },
+    { to: "/admin/social", icon: <Link2 size={17} />, label: "Social Links" },
+    { to: "/admin/resume", icon: <FileText size={17} />, label: "Resume" },
+];
+
+function Sidebar({ collapsed, onClose }) {
+    const { logout } = useAuthStore();
+    const { unread } = useMessageStore();
     const navigate = useNavigate();
 
-    // Basic protection - check if token exists
-    useEffect(() => {
-        const token = localStorage.getItem("adminToken");
-        if (!token) {
-            navigate("/login");
-        }
-    }, [navigate]);
-
     const handleLogout = () => {
-        localStorage.removeItem("adminToken");
-        navigate("/login");
-    };
-
-    const navItems = [
-        {
-            id: "overview",
-            label: "Overview",
-            icon: <LayoutDashboard size={20} />,
-        },
-        { id: "projects", label: "Projects", icon: <Code size={20} /> },
-        { id: "skills", label: "Skills", icon: <Wrench size={20} /> },
-        {
-            id: "experience",
-            label: "Experience",
-            icon: <Briefcase size={20} />,
-        },
-        {
-            id: "messages",
-            label: "Messages",
-            icon: <MessageSquare size={20} />,
-        },
-    ];
-
-    const renderContent = () => {
-        switch (activeTab) {
-            case "overview":
-                return <DashboardStats />;
-            case "projects":
-                return <ProjectManager />;
-            case "skills":
-                return <SkillManager />;
-            // case 'experience': return <ExperienceManager />;
-            // case 'messages': return <MessageViewer />;
-            default:
-                return <DashboardStats />;
-        }
+        logout();
+        navigate("/admin/login");
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row font-sans text-gray-900">
-            {/* Sidebar */}
-            <aside className="w-full md:w-64 bg-white border-r border-gray-100 shadow-[2px_0_20px_rgb(0,0,0,0.02)] flex flex-col md:min-h-screen">
-                <div className="p-6 border-b border-gray-100">
-                    <h1 className="text-xl font-black tracking-tighter">
-                        Admin<span className="text-orange-500">Panel</span>
-                    </h1>
+        <aside
+            className={`
+      flex flex-col bg-dark-bg2 border-r border-dark-border
+      transition-all duration-300 h-full
+      ${collapsed ? "w-0 overflow-hidden md:w-16" : "w-64"}
+    `}
+        >
+            {/* Logo */}
+            <div className="h-16 flex items-center px-5 border-b border-dark-border flex-shrink-0">
+                <div className="flex items-center gap-3 overflow-hidden">
+                    <img
+                        src="/logo/logo-icon.png"
+                        alt="UB"
+                        className="w-8 h-8 rounded-lg object-cover flex-shrink-0"
+                    />
+                    {!collapsed && (
+                        <div>
+                            <div className="text-sm font-bold text-white leading-tight">
+                                Admin Panel
+                            </div>
+                            <div className="text-[10px] text-slate-500">
+                                Portfolio CMS
+                            </div>
+                        </div>
+                    )}
                 </div>
+                <button
+                    onClick={onClose}
+                    className="md:hidden ml-auto text-slate-400 hover:text-white"
+                >
+                    <X size={18} />
+                </button>
+            </div>
 
-                <nav className="flex-1 p-4 space-y-2 overflow-y-auto flex md:flex-col flex-row overflow-x-auto md:overflow-x-visible">
-                    {navItems.map((item) => (
-                        <button
-                            key={item.id}
-                            onClick={() => setActiveTab(item.id)}
-                            className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${
-                                activeTab === item.id
-                                    ? "bg-orange-50 text-orange-600 shadow-sm"
-                                    : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-                            }`}
-                        >
-                            <span
-                                className={
-                                    activeTab === item.id
-                                        ? "text-orange-500"
-                                        : "text-gray-400"
-                                }
-                            >
-                                {item.icon}
-                            </span>
-                            {item.label}
-                        </button>
-                    ))}
-                </nav>
-
-                <div className="p-4 border-t border-gray-100">
-                    <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-3 w-full px-4 py-3 text-red-500 font-semibold hover:bg-red-50 rounded-xl transition-colors"
+            {/* Nav */}
+            <nav className="flex-1 py-4 overflow-y-auto">
+                {NAV.map((item) => (
+                    <NavLink
+                        key={item.to}
+                        to={item.to}
+                        end={item.end}
+                        onClick={() => {
+                            if (window.innerWidth < 768) onClose();
+                        }}
+                        className={({ isActive }) =>
+                            `flex items-center gap-3 px-4 py-2.5 mx-2 rounded-xl text-sm font-medium
+              transition-all duration-200 group relative
+              ${
+                  isActive
+                      ? "bg-accent-blue/15 text-accent-blue border border-accent-blue/20"
+                      : "text-slate-400 hover:text-white hover:bg-dark-card2"
+              }`
+                        }
                     >
-                        <LogOut size={20} /> Logout
-                    </button>
-                </div>
-            </aside>
+                        <span className="flex-shrink-0">{item.icon}</span>
+                        {!collapsed && <span>{item.label}</span>}
+                        {item.badge && unread > 0 && (
+                            <span
+                                className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-accent-blue text-white flex-shrink-0 ${collapsed ? "absolute top-1.5 right-1.5" : ""}`}
+                            >
+                                {unread}
+                            </span>
+                        )}
+                    </NavLink>
+                ))}
+            </nav>
 
-            {/* Main Content Area */}
-            <main className="flex-1 p-6 md:p-10 overflow-y-auto">
-                {renderContent()}
-            </main>
+            {/* Footer */}
+            <div className="p-3 border-t border-dark-border">
+                <a
+                    href="/"
+                    target="_blank"
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-slate-400
+            hover:text-white hover:bg-dark-card2 transition-all"
+                >
+                    <GraduationCap size={17} /> {!collapsed && "View Portfolio"}
+                </a>
+                <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-slate-400
+            hover:text-red-400 hover:bg-red-500/10 transition-all mt-1"
+                >
+                    <LogOut size={17} /> {!collapsed && "Logout"}
+                </button>
+            </div>
+        </aside>
+    );
+}
+
+export default function AdminDashboard() {
+    const { user, loadMe } = useAuthStore();
+    const { fetch: fetchMsgs, unread } = useMessageStore();
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    useEffect(() => {
+        loadMe();
+        fetchMsgs();
+    }, []);
+
+    return (
+        <div className="flex h-screen bg-dark-bg3 text-slate-100 overflow-hidden font-body">
+            {/* Sidebar - desktop always visible, mobile toggled */}
+            <div
+                className={`
+        fixed inset-y-0 left-0 z-30 md:relative md:z-auto
+        ${sidebarOpen ? "block" : "hidden md:flex"}
+        flex-col
+      `}
+            >
+                <Sidebar
+                    collapsed={false}
+                    onClose={() => setSidebarOpen(false)}
+                />
+            </div>
+
+            {/* Overlay for mobile */}
+            {sidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/50 z-20 md:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
+
+            {/* Main */}
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+                {/* Topbar */}
+                <header
+                    className="h-16 flex items-center justify-between px-6
+          bg-dark-bg2 border-b border-dark-border flex-shrink-0"
+                >
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setSidebarOpen((v) => !v)}
+                            className="md:hidden w-9 h-9 rounded-xl flex items-center justify-center
+                bg-dark-card text-slate-400 hover:text-white transition-colors"
+                        >
+                            <Menu size={18} />
+                        </button>
+                        <div>
+                            <h1 className="text-sm font-bold text-white">
+                                Portfolio CMS
+                            </h1>
+                            <p className="text-xs text-slate-500">
+                                Welcome back,{" "}
+                                {user?.name?.split(" ")[0] || "Admin"}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        {unread > 0 && (
+                            <div className="relative">
+                                <div
+                                    className="w-9 h-9 rounded-xl flex items-center justify-center
+                  bg-dark-card text-slate-400"
+                                >
+                                    <Bell size={16} />
+                                </div>
+                                <span
+                                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent-blue
+                  text-white text-[9px] font-bold flex items-center justify-center"
+                                >
+                                    {unread}
+                                </span>
+                            </div>
+                        )}
+                        <div
+                            className="w-9 h-9 rounded-xl bg-grad-main flex items-center justify-center
+              text-white text-xs font-bold shadow-glow-blue"
+                        >
+                            {user?.name
+                                ?.split(" ")
+                                .map((n) => n[0])
+                                .join("")
+                                .slice(0, 2)
+                                .toUpperCase() || "UB"}
+                        </div>
+                    </div>
+                </header>
+
+                {/* Content */}
+                <main className="flex-1 overflow-y-auto p-6">
+                    <Routes>
+                        <Route index element={<DashboardStats />} />
+                        <Route path="hero" element={<HeroEditor />} />
+                        <Route path="projects" element={<ProjectManager />} />
+                        <Route path="skills" element={<SkillManager />} />
+                        <Route
+                            path="experience"
+                            element={<ExperienceManager />}
+                        />
+                        <Route path="messages" element={<MessageViewer />} />
+                        <Route path="gallery" element={<GalleryManager />} />
+                        <Route path="social" element={<SocialManager />} />
+                        <Route path="resume" element={<ResumeManager />} />
+                    </Routes>
+                </main>
+            </div>
         </div>
     );
-};
-
-export default AdminDashboard;
+}

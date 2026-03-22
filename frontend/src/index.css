@@ -1,25 +1,209 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ── CSS Variables ──────────────────────────────────────────────────── */
 :root {
-    color-scheme: light;
+    --accent-blue: #4f8ef7;
+    --accent-purple: #8b5cf6;
+    --grad: linear-gradient(135deg, #4f8ef7, #8b5cf6);
+}
+
+/* ── Base ───────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+    font-family: "DM Sans", system-ui, sans-serif;
 }
 
 body {
-    @apply bg-white text-dark;
-    font-family: "Inter", sans-serif;
-    scroll-behavior: smooth;
+    @apply bg-light-bg text-slate-800 dark:bg-dark-bg dark:text-slate-100;
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease;
+    overflow-x: hidden;
 }
 
-.btn-primary {
-    @apply bg-orange-gradient text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-orange-500/30 transition-all transform hover:scale-[1.02] active:scale-95;
+/* ── PARTICLE TRAIL CURSOR ──────────────────────────────────────────── */
+* {
+    cursor: none !important;
 }
 
-.glass-card-light {
-    @apply bg-white/70 backdrop-blur-md border border-gray-100 rounded-3xl shadow-xl shadow-gray-200/50;
+/* ── Scroll Progress Bar ────────────────────────────────────────────── */
+.scroll-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--grad);
+    z-index: 1000;
+    transition: width 0.1s linear;
+    border-radius: 0 2px 2px 0;
 }
 
-.section-padding {
-    @apply py-24 px-6;
+/* ── Custom Scrollbar ───────────────────────────────────────────────── */
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(79, 142, 247, 0.3);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(79, 142, 247, 0.6);
+}
+
+/* ── Gradient Text ──────────────────────────────────────────────────── */
+.grad-text {
+    background: var(--grad);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ── Glass Card ─────────────────────────────────────────────────────── */
+.glass {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.dark .glass {
+    background: rgba(13, 20, 40, 0.7);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Section Container ──────────────────────────────────────────────── */
+.section-container {
+    @apply max-w-6xl mx-auto px-6 py-20;
+}
+
+/* ── Animated underline ─────────────────────────────────────────────── */
+.hover-underline {
+    position: relative;
+}
+.hover-underline::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--grad);
+    transition: width 0.3s ease;
+    border-radius: 1px;
+}
+.hover-underline:hover::after {
+    width: 100%;
+}
+
+/* ── Skill progress bar ─────────────────────────────────────────────── */
+.skill-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--grad);
+    transform-origin: left;
+    transform: scaleX(0);
+    transition: transform 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.skill-bar-fill.animated {
+    transform: scaleX(1);
+}
+
+/* ── Page transition overlay ────────────────────────────────────────── */
+.page-transition-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--grad);
+    z-index: 9000;
+    transform: translateY(100%);
+}
+
+/* ── Typing cursor ──────────────────────────────────────────────────── */
+.typing-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1.1em;
+    background: var(--accent-blue);
+    margin-left: 3px;
+    vertical-align: middle;
+    animation: blink 0.8s step-end infinite;
+}
+@keyframes blink {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+}
+
+/* ── Nav active indicator ───────────────────────────────────────────── */
+.nav-link-active::after {
+    content: "";
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    background: var(--accent-blue);
+    border-radius: 50%;
+}
+
+/* ── Toast customisation ─────────────────────────────────────────────── */
+.toast-dark {
+    background: #131d35 !important;
+    color: #e8edf7 !important;
+    border: 1px solid #1e2d4a !important;
+}
+
+/* ── Tag pill ───────────────────────────────────────────────────────── */
+.tech-pill {
+    @apply px-3 py-1 rounded-full text-xs font-medium;
+    background: rgba(79, 142, 247, 0.1);
+    color: var(--accent-blue);
+    border: 1px solid rgba(79, 142, 247, 0.2);
+}
+.dark .tech-pill {
+    background: rgba(79, 142, 247, 0.08);
+    border-color: rgba(79, 142, 247, 0.15);
+}
+
+/* ── Section heading ────────────────────────────────────────────────── */
+.section-heading {
+    @apply text-3xl md:text-4xl font-bold mb-2;
+    font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+/* ── Skeleton loader ─────────────────────────────────────────────────── */
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.05) 25%,
+        rgba(255, 255, 255, 0.1) 50%,
+        rgba(255, 255, 255, 0.05) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 8px;
 }

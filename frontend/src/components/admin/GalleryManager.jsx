@@ -1,197 +1,118 @@
-import React, { useState, useEffect } from "react";
-import { Plus, Trash2, Image as ImageIcon } from "lucide-react";
-import axios from "axios";
+import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { Upload, Trash2, Copy, Check } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { galleryAPI } from '../../services/api.js';
 
-const GalleryManager = () => {
-    const [images, setImages] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [showForm, setShowForm] = useState(false);
+export default function GalleryManager() {
+  const [images,    setImages]    = useState([]);
+  const [loading,   setLoading]   = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [copied,    setCopied]    = useState(null);
 
-    // Form State
-    const [title, setTitle] = useState("");
-    const [category, setCategory] = useState("Hackathon");
-    const [file, setFile] = useState(null);
-    const [uploading, setUploading] = useState(false);
+  const fetchImages = async () => {
+    setLoading(true);
+    try { const { data } = await galleryAPI.getAll(); setImages(data.data || []); }
+    catch { toast.error('Failed to load images'); }
+    finally { setLoading(false); }
+  };
 
-    const fetchImages = async () => {
-        try {
-            const res = await axios.get("/api/gallery");
-            setImages(res.data.data);
-            setLoading(false);
-        } catch (err) {
-            console.error(err);
-            setLoading(false);
-        }
-    };
+  useEffect(() => { fetchImages(); }, []);
 
-    useEffect(() => {
-        fetchImages();
-    }, []);
+  const handleUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      for (const file of files) {
+        const fd = new FormData();
+        fd.append('image', file);
+        await galleryAPI.upload(fd);
+      }
+      toast.success(`${files.length} image(s) uploaded!`);
+      fetchImages();
+    } catch { toast.error('Upload failed'); }
+    finally { setUploading(false); }
+  };
 
-    const handleUpload = async (e) => {
-        e.preventDefault();
-        if (!file) return alert("Please select an image");
+  const handleDelete = async (id) => {
+    if (!confirm('Delete this image from Cloudinary?')) return;
+    try {
+      await galleryAPI.delete(id);
+      setImages(imgs => imgs.filter(i => i._id !== id));
+      toast.success('Deleted');
+    } catch { toast.error('Error'); }
+  };
 
-        setUploading(true);
-        const formData = new FormData();
-        formData.append("image", file);
-        formData.append("title", title);
-        formData.append("category", category);
+  const handleCopy = (url) => {
+    navigator.clipboard.writeText(url);
+    setCopied(url);
+    toast.success('URL copied!');
+    setTimeout(() => setCopied(null), 2000);
+  };
 
-        try {
-            const token = localStorage.getItem("adminToken");
-            const res = await axios.post("/api/gallery", formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            setImages([res.data.data, ...images]);
-            setShowForm(false);
-            setTitle("");
-            setFile(null);
-        } catch (err) {
-            console.error(err);
-            alert("Upload failed");
-        } finally {
-            setUploading(false);
-        }
-    };
-
-    const handleDelete = async (id) => {
-        if (!window.confirm("Delete this image?")) return;
-        try {
-            const token = localStorage.getItem("adminToken");
-            await axios.delete(`/api/gallery/${id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setImages(images.filter((img) => img._id !== id));
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    return (
-        <div className="animate-fade-in">
-            <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">
-                    Manage Gallery
-                </h2>
-                <button
-                    onClick={() => setShowForm(!showForm)}
-                    className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition-colors shadow-sm"
-                >
-                    <Plus size={18} /> Upload Image
-                </button>
-            </div>
-
-            {/* Upload Form */}
-            {showForm && (
-                <form
-                    onSubmit={handleUpload}
-                    className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mb-8 space-y-4"
-                >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Image Title
-                            </label>
-                            <input
-                                type="text"
-                                required
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-orange-500/20 bg-gray-50"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Category
-                            </label>
-                            <select
-                                value={category}
-                                onChange={(e) => setCategory(e.target.value)}
-                                className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-orange-500/20 bg-gray-50"
-                            >
-                                <option>Hackathon</option>
-                                <option>Setup</option>
-                                <option>Event</option>
-                                <option>Other</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Select File
-                        </label>
-                        <input
-                            type="file"
-                            accept="image/*"
-                            required
-                            onChange={(e) => setFile(e.target.files[0])}
-                            className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50"
-                        />
-                    </div>
-                    <div className="flex justify-end gap-3 mt-4">
-                        <button
-                            type="button"
-                            onClick={() => setShowForm(false)}
-                            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={uploading}
-                            className="px-6 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-black transition-colors disabled:opacity-70"
-                        >
-                            {uploading ? "Uploading..." : "Upload Image"}
-                        </button>
-                    </div>
-                </form>
-            )}
-
-            {/* Image Grid */}
-            {loading ? (
-                <div className="text-orange-500 text-center py-10">
-                    Loading...
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                    {images.map((img) => (
-                        <div
-                            key={img._id}
-                            className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden group"
-                        >
-                            <div className="h-48 overflow-hidden relative">
-                                <img
-                                    src={img.imageUrl}
-                                    alt={img.title}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                />
-                                <div className="absolute top-2 right-2">
-                                    <button
-                                        onClick={() => handleDelete(img._id)}
-                                        className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="p-4">
-                                <h4 className="font-bold text-gray-900 mb-1">
-                                    {img.title}
-                                </h4>
-                                <span className="text-xs font-semibold px-2 py-1 bg-gray-100 text-gray-600 rounded-md">
-                                    {img.category}
-                                </span>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-xl font-bold text-white">Media Gallery</h2>
+          <p className="text-sm text-slate-500">Powered by Cloudinary · {images.length} files</p>
         </div>
-    );
-};
+        <label className={`flex items-center gap-2 px-4 py-2.5 rounded-xl
+          bg-grad-main text-white text-sm font-semibold hover:shadow-glow-blue
+          transition-all cursor-pointer ${uploading ? 'opacity-60 pointer-events-none' : ''}`}>
+          <Upload size={16}/> {uploading ? 'Uploading...' : 'Upload Images'}
+          <input type="file" multiple accept="image/*" className="hidden" onChange={handleUpload}/>
+        </label>
+      </div>
 
-export default GalleryManager;
+      {/* Drop zone */}
+      <label className="flex flex-col items-center justify-center h-28 border-2 border-dashed border-dark-border
+        rounded-2xl mb-6 text-slate-500 hover:border-accent-blue/40 hover:text-accent-blue
+        transition-all cursor-pointer group">
+        <Upload size={24} className="mb-2 opacity-40 group-hover:opacity-70"/>
+        <span className="text-sm">Drag & drop or click to upload</span>
+        <span className="text-xs mt-1 opacity-50">JPG, PNG, WebP — stored in Cloudinary</span>
+        <input type="file" multiple accept="image/*" className="hidden" onChange={handleUpload}/>
+      </label>
+
+      {/* Grid */}
+      {loading ? (
+        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          {Array(10).fill(0).map((_,i) => <div key={i} className="skeleton aspect-square rounded-xl"/>)}
+        </div>
+      ) : (
+        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          {images.map(img => (
+            <motion.div
+              key={img._id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="relative group aspect-square rounded-xl overflow-hidden border border-dark-border"
+            >
+              <img src={img.url} alt="" className="w-full h-full object-cover"/>
+              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100
+                transition-opacity flex items-center justify-center gap-2">
+                <button onClick={() => handleCopy(img.url)}
+                  className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm text-white
+                    hover:bg-accent-blue/60 flex items-center justify-center transition-colors">
+                  {copied === img.url ? <Check size={14}/> : <Copy size={14}/>}
+                </button>
+                <button onClick={() => handleDelete(img._id)}
+                  className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm text-white
+                    hover:bg-red-500/60 flex items-center justify-center transition-colors">
+                  <Trash2 size={14}/>
+                </button>
+              </div>
+            </motion.div>
+          ))}
+          {images.length === 0 && !loading && (
+            <div className="col-span-5 text-center py-16 text-slate-600 text-sm">
+              No images yet — upload some!
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

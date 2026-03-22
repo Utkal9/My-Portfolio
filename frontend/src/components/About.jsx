@@ -1,72 +1,88 @@
-import React from "react";
-import { motion } from "framer-motion";
-import AnimatedSection from "./ui/AnimatedSection";
+// About.jsx
+import { motion } from 'framer-motion';
+import { MapPin, GraduationCap, Award } from 'lucide-react';
 
-const About = () => {
-    return (
-        <section id="about" className="py-24 bg-black overflow-hidden">
-            <div className="max-w-6xl mx-auto px-6">
-                <div className="grid md:grid-cols-2 gap-16 items-center">
-                    <AnimatedSection>
-                        <div className="relative group">
-                            <div className="absolute -inset-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl opacity-20 group-hover:opacity-40 transition duration-500 blur-xl"></div>
-                            <div className="relative bg-gray-900 rounded-2xl overflow-hidden border border-gray-800">
-                                <img
-                                    src="/src/assets/hero.png"
-                                    alt="Utkal Behera"
-                                    className="w-full grayscale hover:grayscale-0 transition duration-500"
-                                />
-                            </div>
-                        </div>
-                    </AnimatedSection>
+export function About({ config }) {
+  const about = config?.about || {};
+  const hero  = config?.hero  || {};
 
-                    <AnimatedSection>
-                        <h2 className="text-blue-500 font-mono text-sm mb-4 uppercase tracking-widest">
-                            01. About Me
-                        </h2>
-                        <h3 className="text-3xl font-bold text-white mb-6">
-                            Developing with Purpose.
-                        </h3>
-                        <div className="space-y-4 text-gray-400 text-lg leading-relaxed">
-                            <p>
-                                Hello! My name is{" "}
-                                <span className="text-white">Utkal Behera</span>
-                                . My journey into web development started back
-                                in college when I realized I could turn lines of
-                                code into functional, beautiful products.
-                            </p>
-                            <p>
-                                Fast-forward to today, and I've had the
-                                privilege of working on diverse projects—from{" "}
-                                <span className="text-blue-400">
-                                    Social Media Platforms
-                                </span>{" "}
-                                to{" "}
-                                <span className="text-purple-400">
-                                    AI-integrated applications
-                                </span>
-                                . My main focus these days is building
-                                accessible, high-performance products for the
-                                web.
-                            </p>
-                            <p>
-                                I'm a B.Tech Computer Science student at{" "}
-                                <span className="text-white">
-                                    Lovely Professional University
-                                </span>
-                                , constantly pushing the boundaries of what I
-                                can build with the{" "}
-                                <span className="text-blue-500 font-mono">
-                                    MERN Stack
-                                </span>
-                                .
-                            </p>
-                        </div>
-                    </AnimatedSection>
-                </div>
+  return (
+    <section id="about" className="py-20">
+      <div className="section-container">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-14"
+        >
+          <span className="text-xs font-bold tracking-widest text-accent-blue uppercase mb-3 block">About</span>
+          <h2 className="section-heading text-slate-900 dark:text-white">
+            Who I <span className="grad-text">Am</span>
+          </h2>
+        </motion.div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          {/* Image */}
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="flex justify-center"
+          >
+            <div className="relative">
+              <div className="w-64 h-64 rounded-3xl overflow-hidden border-2 border-slate-100 dark:border-dark-border shadow-card-light dark:shadow-card-dark">
+                {about.profileImage
+                  ? <img src={about.profileImage} alt="About" className="w-full h-full object-cover"/>
+                  : <div className="w-full h-full bg-grad-main flex items-center justify-center text-white text-6xl font-bold">UB</div>
+                }
+              </div>
+              <div className="absolute -bottom-4 -right-4 w-28 h-28 rounded-2xl bg-white dark:bg-dark-card
+                border border-slate-100 dark:border-dark-border shadow-card-light dark:shadow-card-dark
+                flex flex-col items-center justify-center">
+                <div className="text-2xl font-bold grad-text">7.6</div>
+                <div className="text-xs text-slate-500 text-center">CGPA @ LPU</div>
+              </div>
             </div>
-        </section>
-    );
-};
+          </motion.div>
+
+          {/* Text */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
+              {about.description || `I'm Utkal Behera, a passionate Full Stack Developer pursuing B.Tech in CSE at Lovely Professional University, Phagwara. I love building scalable web applications and have hands-on experience with MERN Stack, Next.js, and Cloud technologies.`}
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              {[
+                { icon: <GraduationCap size={16}/>, label: 'Education', value: 'LPU, B.Tech CSE' },
+                { icon: <MapPin size={16}/>,        label: 'Location',  value: 'Phagwara, Punjab' },
+                { icon: <Award size={16}/>,         label: 'Rank 1',    value: 'NxtWave DSA (7k+ participants)' },
+              ].map(item => (
+                <div key={item.label}
+                  className="flex items-center gap-3 p-3 rounded-xl
+                    bg-slate-50 dark:bg-dark-card2
+                    border border-slate-100 dark:border-dark-border">
+                  <div className="w-8 h-8 rounded-lg bg-accent-blue/10 flex items-center justify-center text-accent-blue flex-shrink-0">
+                    {item.icon}
+                  </div>
+                  <div>
+                    <div className="text-xs text-slate-400">{item.label}</div>
+                    <div className="text-sm font-semibold text-slate-700 dark:text-slate-300">{item.value}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default About;

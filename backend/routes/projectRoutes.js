@@ -1,18 +1,13 @@
-const express = require("express");
+import express from 'express';
+import { getProjects, getAllProjects, getProject, createProject, updateProject, deleteProject, reorderProjects } from '../controllers/projectController.js';
+import auth from '../middleware/authMiddleware.js';
+import { uploadProject } from '../config/cloudinary.js';
 const router = express.Router();
-const {
-    getProjects,
-    createProject,
-} = require("../controllers/projectController");
-const { upload } = require("../config/cloudinary");
-
-// GET all projects
-router.get("/", getProjects);
-const { protect } = require("../middleware/authMiddleware");
-
-// Only protected users can POST (create) a project
-// POST create project (with image upload)
-// 'image' is the field name we will use in Postman/Frontend
-router.post("/", protect, upload.single("image"), createProject);
-
-module.exports = router;
+router.get('/', getProjects);
+router.get('/all', auth, getAllProjects);
+router.get('/:id', getProject);
+router.post('/', auth, uploadProject.array('images', 5), createProject);
+router.put('/:id', auth, uploadProject.array('images', 5), updateProject);
+router.delete('/:id', auth, deleteProject);
+router.patch('/reorder', auth, reorderProjects);
+export default router;

@@ -1,113 +1,97 @@
-import React, { useEffect } from "react";
-import { Briefcase, Calendar } from "lucide-react";
-import useExperienceStore from "../store/useExperienceStore";
+import { useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Briefcase, MapPin, Calendar } from 'lucide-react';
+import { useExperienceStore } from '../store/index.js';
 
-const ExperienceTimeline = () => {
-    const { experiences, loading, error, fetchExperiences } =
-        useExperienceStore();
-
-    useEffect(() => {
-        fetchExperiences();
-    }, [fetchExperiences]);
-
-    // Helper to format dates cleanly
-    const formatDate = (dateString, isCurrent) => {
-        if (isCurrent) return "Present";
-        const date = new Date(dateString);
-        return date.toLocaleDateString("en-US", {
-            month: "short",
-            year: "numeric",
-        });
-    };
-
-    if (loading)
-        return (
-            <div className="py-20 text-center text-orange-500">
-                Loading timeline...
+function TimelineItem({ exp, index }) {
+  const isLeft = index % 2 === 0;
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: isLeft ? -40 : 40 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: true, margin: '-80px' }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      className={`relative flex ${isLeft ? 'md:flex-row' : 'md:flex-row-reverse'} flex-col items-start md:items-center gap-6 md:gap-12`}
+    >
+      {/* Card */}
+      <div className={`flex-1 ${isLeft ? 'md:text-right' : 'md:text-left'}`}>
+        <div className="p-6 rounded-2xl bg-white dark:bg-dark-card
+          border border-slate-100 dark:border-dark-border
+          shadow-card-light dark:shadow-none
+          hover:border-accent-blue/30 dark:hover:border-accent-blue/20
+          hover:shadow-glow-blue/10 transition-all duration-300"
+        >
+          <div className={`flex items-center gap-2 mb-1 ${isLeft ? 'md:justify-end' : ''}`}>
+            <span className="text-xs px-2.5 py-1 rounded-full bg-accent-blue/10 text-accent-blue font-semibold">
+              {exp.startDate} – {exp.endDate || 'Present'}
+            </span>
+          </div>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{exp.role}</h3>
+          <p className="text-accent-blue font-semibold text-sm mb-2">{exp.company}</p>
+          {exp.location && (
+            <div className={`flex items-center gap-1 text-xs text-slate-400 mb-3 ${isLeft ? 'md:justify-end' : ''}`}>
+              <MapPin size={11}/> {exp.location}
             </div>
-        );
-    if (error) return null; // Or handle error gracefully
-    if (experiences.length === 0) return null; // Don't show section if no data
-
-    return (
-        <section id="experience" className="py-20 bg-white relative">
-            <div className="container mx-auto px-6 max-w-4xl">
-                <div className="text-center mb-16">
-                    <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                        Experience & Journey
-                    </h2>
-                    <div className="w-16 h-1 bg-orange-500 mx-auto rounded-full"></div>
-                </div>
-
-                <div className="relative">
-                    {/* The Vertical Timeline Line */}
-                    <div className="absolute left-0 md:left-1/2 transform md:-translate-x-1/2 top-0 bottom-0 w-1 bg-orange-100 rounded-full"></div>
-
-                    <div className="space-y-12">
-                        {experiences.map((exp, index) => (
-                            <div
-                                key={exp._id}
-                                className={`relative flex flex-col md:flex-row ${index % 2 === 0 ? "md:flex-row-reverse" : ""} items-center`}
-                            >
-                                {/* Timeline Dot */}
-                                <div className="absolute left-[-8px] md:left-1/2 transform md:-translate-x-1/2 w-5 h-5 bg-white border-4 border-orange-500 rounded-full z-10 shadow-sm"></div>
-
-                                {/* Content Card */}
-                                <div className="ml-8 md:ml-0 md:w-1/2 w-full p-4">
-                                    <div
-                                        className={`bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(249,115,22,0.08)] transition-all duration-300 ${index % 2 === 0 ? "md:ml-8" : "md:mr-8"}`}
-                                    >
-                                        <div className="flex items-center gap-2 text-orange-500 mb-2">
-                                            <Briefcase size={16} />
-                                            <span className="font-bold text-gray-900 text-lg">
-                                                {exp.role}
-                                            </span>
-                                        </div>
-
-                                        <h4 className="text-md font-semibold text-gray-700 mb-3">
-                                            {exp.company}
-                                        </h4>
-
-                                        <div className="flex items-center gap-2 text-xs font-medium text-gray-500 mb-4 bg-gray-50 inline-block px-3 py-1.5 rounded-full border border-gray-100">
-                                            <Calendar
-                                                size={14}
-                                                className="inline mr-1"
-                                            />
-                                            {formatDate(exp.startDate)} -{" "}
-                                            {formatDate(
-                                                exp.endDate,
-                                                exp.isCurrentJob,
-                                            )}
-                                        </div>
-
-                                        <p className="text-gray-600 text-sm mb-5 leading-relaxed">
-                                            {exp.description}
-                                        </p>
-
-                                        {exp.technologies &&
-                                            exp.technologies.length > 0 && (
-                                                <div className="flex flex-wrap gap-2 mt-auto">
-                                                    {exp.technologies.map(
-                                                        (tech, i) => (
-                                                            <span
-                                                                key={i}
-                                                                className="text-[11px] font-medium bg-orange-50 text-orange-600 px-2 py-1 rounded-md"
-                                                            >
-                                                                {tech}
-                                                            </span>
-                                                        ),
-                                                    )}
-                                                </div>
-                                            )}
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+          )}
+          <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">{exp.description}</p>
+          {exp.techStack?.length > 0 && (
+            <div className={`flex flex-wrap gap-1.5 mt-3 ${isLeft ? 'md:justify-end' : ''}`}>
+              {exp.techStack.map(t => (
+                <span key={t} className="tech-pill text-[10px] px-2 py-0.5">{t}</span>
+              ))}
             </div>
-        </section>
-    );
-};
+          )}
+        </div>
+      </div>
 
-export default ExperienceTimeline;
+      {/* Center dot */}
+      <div className="hidden md:flex flex-shrink-0 w-12 h-12 rounded-full bg-grad-main
+        items-center justify-center shadow-glow-blue z-10">
+        <Briefcase size={18} className="text-white" />
+      </div>
+
+      {/* Spacer */}
+      <div className="flex-1 hidden md:block" />
+    </motion.div>
+  );
+}
+
+export default function ExperienceTimeline() {
+  const { experience, fetch, loading } = useExperienceStore();
+  useEffect(() => { fetch(); }, []);
+
+  return (
+    <section id="experience" className="py-20 bg-slate-50/50 dark:bg-dark-bg2/50">
+      <div className="section-container">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
+        >
+          <span className="text-xs font-bold tracking-widest text-accent-blue uppercase mb-3 block">Experience</span>
+          <h2 className="section-heading text-slate-900 dark:text-white">
+            Work <span className="grad-text">Timeline</span>
+          </h2>
+        </motion.div>
+
+        {/* Timeline */}
+        <div className="relative">
+          {/* Centre line (desktop) */}
+          <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px
+            bg-gradient-to-b from-accent-blue/30 via-accent-purple/20 to-transparent" />
+
+          <div className="flex flex-col gap-12">
+            {loading
+              ? Array(2).fill(0).map((_,i) => <div key={i} className="skeleton h-36 rounded-2xl" />)
+              : experience.map((exp, i) => (
+                  <TimelineItem key={exp._id} exp={exp} index={i} />
+                ))
+            }
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}

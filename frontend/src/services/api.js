@@ -1,43 +1,141 @@
 import axios from "axios";
 
-const API = axios.create({
-    baseURL: "http://localhost:5000/api",
+const BASE = import.meta.env.VITE_API_URL || "/api";
+
+const api = axios.create({ baseURL: BASE, withCredentials: true });
+
+// Attach JWT from localStorage
+api.interceptors.request.use((cfg) => {
+    const token = localStorage.getItem("portfolio_token");
+    if (token) cfg.headers.Authorization = `Bearer ${token}`;
+    return cfg;
 });
 
-// Add token to requests if it exists
-API.interceptors.request.use((req) => {
-    const profile = localStorage.getItem("profile");
-    if (profile) {
-        const { token } = JSON.parse(profile);
-        req.headers.Authorization = `Bearer ${token}`;
-    }
-    return req;
-});
+// Redirect to login on 401
+api.interceptors.response.use(
+    (res) => res,
+    (err) => {
+        if (err.response?.status === 401) {
+            localStorage.removeItem("portfolio_token");
+            window.location.href = "/admin/login";
+        }
+        return Promise.reject(err);
+    },
+);
 
-// Projects
-export const fetchProjects = () => API.get("/projects");
-export const createProject = (newProject) => API.post("/projects", newProject);
-export const deleteProject = (id) => API.delete(`/projects/${id}`);
+// ── Auth ─────────────────────────────────────────────────────────────
+export const authAPI = {
+    login: (data) => api.post("/auth/login", data),
+    getMe: () => api.get("/auth/me"),
+    changePassword: (data) => api.post("/auth/change-password", data),
+};
 
-// Skills
-export const fetchSkills = () => API.get("/skills");
-export const addSkill = (skillData) => API.post("/skills", skillData);
-export const deleteSkill = (id) => API.delete(`/skills/${id}`);
+// ── Site Config ──────────────────────────────────────────────────────
+export const configAPI = {
+    get: () => api.get("/site-config"),
+    update: (data) => api.put("/site-config", data),
+    uploadProfile: (formData) =>
+        api.post("/site-config/upload-profile", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        }),
+};
 
-// Experience
-export const fetchExperience = () => API.get("/experience");
-export const addExperience = (expData) => API.post("/experience", expData);
-export const deleteExperience = (id) => API.delete(`/experience/${id}`);
+// ── Projects ─────────────────────────────────────────────────────────
+export const projectsAPI = {
+    getAll: (params) => api.get("/projects", { params }),
+    getAllAdmin: () => api.get("/projects/all"),
+    getOne: (id) => api.get(`/projects/${id}`),
+    create: (formData) =>
+        api.post("/projects", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        }),
+    update: (id, formData) =>
+        api.put(`/projects/${id}`, formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        }),
+    delete: (id) => api.delete(`/projects/${id}`),
+    reorder: (orders) => api.patch("/projects/reorder", { orders }),
+};
 
-// Auth
-export const login = (formData) => API.post("/auth/login", formData);
+// ── Skills ───────────────────────────────────────────────────────────
+export const skillsAPI = {
+    getAll: () => api.get("/skills"),
+    getAllAdmin: () => api.get("/skills/all"),
+    create: (data) => api.post("/skills", data),
+    update: (id, data) => api.put(`/skills/${id}`, data),
+    delete: (id) => api.delete(`/skills/${id}`),
+    reorder: (orders) => api.patch("/skills/reorder", { orders }),
+};
 
-// Contact
-export const sendMessage = (messageData) => API.post("/contact", messageData);
+// ── Experience ───────────────────────────────────────────────────────
+export const experienceAPI = {
+    getAll: () => api.get("/experience"),
+    getAllAdmin: () => api.get("/experience/all"),
+    create: (data) => api.post("/experience", data),
+    update: (id, data) => api.put(`/experience/${id}`, data),
+    delete: (id) => api.delete(`/experience/${id}`),
+};
 
-// Gallery API
-export const fetchGallery = () => API.get("/gallery");
-export const uploadToGallery = (imageData) => API.post("/gallery", imageData);
-export const deleteGalleryImage = (id) => API.delete(`/gallery/${id}`);
+// ── Contact ──────────────────────────────────────────────────────────
+export const contactAPI = {
+    send: (data) => api.post("/contact", data),
+    getMessages: () => api.get("/contact/messages"),
+    markRead: (id) => api.patch(`/contact/messages/${id}/read`),
+    deleteMessage: (id) => api.delete(`/contact/messages/${id}`),
+};
 
-export default API;
+// ── Resume ───────────────────────────────────────────────────────────
+export const resumeAPI = {
+    get: () => api.get("/resume"),
+    upload: (fd) =>
+        api.post("/resume/upload", fd, {
+            headers: { "Content-Type": "multipart/form-data" },
+        }),
+    download: () => `${BASE}/resume/download`,
+};
+
+// ── Gallery ──────────────────────────────────────────────────────────
+export const galleryAPI = {
+    getAll: () => api.get("/gallery"),
+    upload: (fd) =>
+        api.post("/gallery/upload", fd, {
+            headers: { "Content-Type": "multipart/form-data" },
+        }),
+    delete: (id) => api.delete(`/gallery/${id}`),
+};
+
+// ── Social Links ─────────────────────────────────────────────────────
+export const socialAPI = {
+    getAll: () => api.get("/social"),
+    getAllAdmin: () => api.get("/social/all"),
+    create: (data) => api.post("/social", data),
+    update: (id, data) => api.put(`/social/${id}`, data),
+    delete: (id) => api.delete(`/social/${id}`),
+};
+
+// ── Certificates ─────────────────────────────────────────────────────
+export const certsAPI = {
+    getAll: () => api.get("/gallery?type=certificate"),
+    getAllAdmin: () => api.get("/gallery/certs"),
+    create: (fd) =>
+        api.post("/gallery/certs", fd, {
+            headers: { "Content-Type": "multipart/form-data" },
+        }),
+    update: (id, fd) =>
+        api.put(`/gallery/certs/${id}`, fd, {
+            headers: { "Content-Type": "multipart/form-data" },
+        }),
+    delete: (id) => api.delete(`/gallery/certs/${id}`),
+};
+
+// ── GitHub (external) ────────────────────────────────────────────────
+export const githubAPI = {
+    getUser: (username) =>
+        axios.get(`https://api.github.com/users/${username}`),
+    getRepos: (username) =>
+        axios.get(
+            `https://api.github.com/users/${username}/repos?sort=updated&per_page=6`,
+        ),
+};
+
+export default api;

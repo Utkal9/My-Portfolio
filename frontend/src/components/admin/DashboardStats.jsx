@@ -1,72 +1,165 @@
-import React from "react";
-import { Code, Wrench, MessageSquare, Eye } from "lucide-react";
+import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { FolderKanban, Zap, MessageSquare, Eye, Settings, ArrowRight } from 'lucide-react';
+import { useProjectStore, useSkillStore, useMessageStore, useSiteConfigStore } from '../../store/index.js';
 
-const StatCard = ({ title, value, icon, colorClass, bgColorClass }) => (
-    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] flex items-center gap-5">
-        <div
-            className={`w-14 h-14 rounded-full flex items-center justify-center ${bgColorClass} ${colorClass}`}
-        >
-            {icon}
+function StatCard({ icon, label, value, color, delay, to }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay }}
+      className="bg-dark-card border border-dark-border rounded-2xl p-5
+        hover:border-accent-blue/30 transition-all duration-300 group"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>
+          {icon}
         </div>
-        <div>
-            <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-            <h3 className="text-3xl font-black text-gray-900">{value}</h3>
-        </div>
+        {to && (
+          <Link to={to} className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-accent-blue">
+            <ArrowRight size={16}/>
+          </Link>
+        )}
+      </div>
+      <div className="text-3xl font-bold grad-text mb-1">{value}</div>
+      <div className="text-xs text-slate-500 uppercase tracking-wider">{label}</div>
+    </motion.div>
+  );
+}
+
+// Section visibility toggles
+function SectionToggle({ label, keyName, visible, onToggle }) {
+  return (
+    <div className="flex items-center justify-between py-3 border-b border-dark-border last:border-0">
+      <span className="text-sm text-slate-300">{label}</span>
+      <button
+        onClick={() => onToggle(keyName, !visible)}
+        className={`w-10 h-5 rounded-full transition-all duration-200 relative
+          ${visible ? 'bg-accent-blue' : 'bg-dark-border'}`}
+      >
+        <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-200
+          ${visible ? 'left-5' : 'left-0.5'}`} />
+      </button>
     </div>
-);
+  );
+}
 
-const DashboardStats = () => {
-    // In a real app, you would fetch these numbers from an API endpoint
-    return (
-        <div className="animate-fade-in">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                Dashboard Overview
-            </h2>
+const SECTIONS = [
+  { label: 'Hero Section',        key: 'hero' },
+  { label: 'About Section',       key: 'about' },
+  { label: 'Skills Section',      key: 'skills' },
+  { label: 'Projects Section',    key: 'projects' },
+  { label: 'Experience Section',  key: 'experience' },
+  { label: 'Certificates Section',key: 'certificates' },
+  { label: 'GitHub Stats',        key: 'github' },
+  { label: 'LeetCode Stats',      key: 'leetcode' },
+  { label: 'Contact Section',     key: 'contact' },
+];
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                <StatCard
-                    title="Total Projects"
-                    value="12"
-                    icon={<Code size={24} />}
-                    colorClass="text-blue-600"
-                    bgColorClass="bg-blue-50"
-                />
-                <StatCard
-                    title="Skills Listed"
-                    value="24"
-                    icon={<Wrench size={24} />}
-                    colorClass="text-orange-600"
-                    bgColorClass="bg-orange-50"
-                />
-                <StatCard
-                    title="Unread Messages"
-                    value="3"
-                    icon={<MessageSquare size={24} />}
-                    colorClass="text-red-600"
-                    bgColorClass="bg-red-50"
-                />
-                <StatCard
-                    title="Profile Views"
-                    value="1.2k"
-                    icon={<Eye size={24} />}
-                    colorClass="text-green-600"
-                    bgColorClass="bg-green-50"
-                />
-            </div>
+export default function DashboardStats() {
+  const { projects, fetch: fetchProjects } = useProjectStore();
+  const { skills,   fetch: fetchSkills }   = useSkillStore();
+  const { messages, unread, fetch: fetchMsgs } = useMessageStore();
+  const { config, fetch: fetchConfig, update } = useSiteConfigStore();
 
-            <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)]">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">
-                    Welcome back, Utkal!
-                </h3>
-                <p className="text-gray-600">
-                    Your portfolio is currently live and running smoothly. Use
-                    the sidebar menu to add new projects, update your skills,
-                    manage your work experience, or reply to messages from
-                    potential recruiters.
-                </p>
-            </div>
-        </div>
-    );
-};
+  useEffect(() => {
+    fetchProjects();
+    fetchSkills();
+    fetchMsgs();
+    fetchConfig();
+  }, []);
 
-export default DashboardStats;
+  const toggleSection = async (key, val) => {
+    await update({ sections: { ...config?.sections, [key]: val } });
+  };
+
+  const stats = [
+    { icon: <FolderKanban size={18} className="text-blue-400"/>,   label: 'Projects',  value: projects.length, color: 'bg-blue-400/10',   delay: 0,    to: '/admin/projects' },
+    { icon: <Zap size={18} className="text-purple-400"/>,          label: 'Skills',    value: skills.length,   color: 'bg-purple-400/10', delay: 0.05, to: '/admin/skills' },
+    { icon: <MessageSquare size={18} className="text-amber-400"/>, label: 'Messages',  value: messages.length, color: 'bg-amber-400/10',  delay: 0.1,  to: '/admin/messages' },
+    { icon: <Eye size={18} className="text-green-400"/>,           label: 'Unread',    value: unread,          color: 'bg-green-400/10',  delay: 0.15  },
+  ];
+
+  return (
+    <div>
+      <div className="mb-6">
+        <h2 className="text-xl font-bold text-white mb-1">Dashboard</h2>
+        <p className="text-sm text-slate-500">Overview of your portfolio CMS</p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {stats.map((s, i) => <StatCard key={i} {...s} />)}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Section visibility */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-dark-card border border-dark-border rounded-2xl p-5"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-white text-sm">Section Visibility</h3>
+            <span className="text-xs text-slate-500">Toggle to show/hide sections</span>
+          </div>
+          {SECTIONS.map(s => (
+            <SectionToggle
+              key={s.key}
+              label={s.label}
+              keyName={s.key}
+              visible={config?.sections?.[s.key] !== false}
+              onToggle={toggleSection}
+            />
+          ))}
+        </motion.div>
+
+        {/* Quick links */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-dark-card border border-dark-border rounded-2xl p-5"
+        >
+          <h3 className="font-bold text-white text-sm mb-4">Quick Actions</h3>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { label: 'Edit Hero',        to: '/admin/hero',       icon: <Settings size={16}/> },
+              { label: 'Add Project',      to: '/admin/projects',   icon: <FolderKanban size={16}/> },
+              { label: 'Add Skill',        to: '/admin/skills',     icon: <Zap size={16}/> },
+              { label: 'View Messages',    to: '/admin/messages',   icon: <MessageSquare size={16}/> },
+              { label: 'Upload Media',     to: '/admin/gallery',    icon: <Eye size={16}/> },
+              { label: 'Social Links',     to: '/admin/social',     icon: <Settings size={16}/> },
+            ].map(item => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className="flex items-center gap-3 p-3 rounded-xl
+                  bg-dark-bg border border-dark-border
+                  text-slate-400 hover:text-white hover:border-accent-blue/30
+                  transition-all text-xs font-medium"
+              >
+                <span className="text-accent-blue">{item.icon}</span>
+                {item.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Preview link */}
+          <a
+            href="/"
+            target="_blank"
+            className="mt-4 flex items-center justify-center gap-2 w-full py-3 rounded-xl
+              bg-grad-main text-white font-semibold text-sm
+              hover:shadow-glow-blue transition-all"
+          >
+            <Eye size={15}/> Preview Portfolio
+          </a>
+        </motion.div>
+      </div>
+    </div>
+  );
+}

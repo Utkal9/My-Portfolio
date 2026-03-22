@@ -1,61 +1,61 @@
-const User = require("../models/User");
-const generateToken = require("../utils/generateToken");
+import jwt from 'jsonwebtoken';
+import { User } from '../models/index.js';
 
-// @desc    Auth user & get token (Login)
-// @route   POST /api/auth/login
-// @access  Public
-exports.authUser = async (req, res) => {
-    try {
-        const { email, password } = req.body;
+const generateToken = (id) =>
+  jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' });
 
-        const user = await User.findOne({ email });
+// POST /api/auth/login
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password)
+      return res.status(400).json({ success: false, message: 'Email and password required' });
 
-        // Check if user exists and password matches
-        if (user && (await user.matchPassword(password))) {
-            res.json({
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                token: generateToken(user._id),
-            });
-        } else {
-            res.status(401).json({ error: "Invalid email or password" });
-        }
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    const user = await User.findOne({ email });
+    if (!user || !(await user.comparePassword(password)))
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+
+    const token = generateToken(user._id);
+    res.json({ success: true, token, user: { id: user._id, name: user.name, email: user.email } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 };
 
-// @desc    Register a new admin user
-// @route   POST /api/auth/register
-// @access  Public (You should restrict this in production after creating your account)
-exports.registerUser = async (req, res) => {
-    try {
-        const { name, email, password } = req.body;
+// GET /api/auth/me
+export const getMe = async (req, res) => {
+  res.json({ success: true, user: req.user });
+};
 
-        const userExists = await User.findOne({ email });
+// POST /api/auth/change-password
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const user = await User.findById(req.user._id);
+    if (!(await user.comparePassword(currentPassword)))
+      return res.status(400).json({ success: false, message: 'Current password incorrect' });
 
-        if (userExists) {
-            return res.status(400).json({ error: "User already exists" });
-        }
+    user.password = newPassword;
+    await user.save();
+    res.json({ success: true, message: 'Password updated' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
 
-        const user = await User.create({
-            name,
-            email,
-            password,
-        });
-
-        if (user) {
-            res.status(201).json({
-                _id: user._id,
-                name: user.name,
-                email: user.email,
-                token: generateToken(user._id),
-            });
-        } else {
-            res.status(400).json({ error: "Invalid user data" });
-        }
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+// Seed initial admin (call once)
+export const seedAdmin = async () => {
+  try {
+    const exists = await User.findOne({ email: process.env.ADMIN_EMAIL_DEFAULT });
+    if (!exists) {
+      await User.create({
+        name: 'Utkal Behera',
+        email: process.env.ADMIN_EMAIL_DEFAULT,
+        password: process.env.ADMIN_PASSWORD_DEFAULT,
+      });
+      console.log('✅ Admin seeded');
     }
+  } catch (err) {
+    console.error('Seed error:', err.message);
+  }
 };
