@@ -2,10 +2,11 @@
 import dotenv from "dotenv";
 dotenv.config();
 import fetch from "node-fetch";
-// Now all other imports — env vars are already loaded
+
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 import authRoutes from "./routes/authRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
@@ -16,19 +17,31 @@ import resumeRoutes from "./routes/resumeRoutes.js";
 import galleryRoutes from "./routes/galleryRoutes.js";
 import socialRoutes from "./routes/socialRoutes.js";
 import siteConfigRoutes from "./routes/siteConfigRoutes.js";
-import { seedAdmin } from "./controllers/authController.js";
 
 const app = express();
 
+// ── CORS ──────────────────────────────────────────────────────────────
 app.use(
     cors({
-        origin: process.env.FRONTEND_URL || "http://localhost:5173",
+        origin: (origin, callback) => {
+            const allowed = [
+                "http://localhost:5173",
+                "http://localhost:5174",
+                "http://localhost:3000",
+                process.env.FRONTEND_URL,
+            ].filter(Boolean);
+            if (!origin) return callback(null, true);
+            if (allowed.includes(origin)) return callback(null, true);
+            callback(new Error(`CORS blocked: ${origin}`));
+        },
         credentials: true,
     }),
 );
+
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
+// ── Routes ────────────────────────────────────────────────────────────
 app.use("/api/auth", authRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/skills", skillRoutes);
@@ -39,8 +52,12 @@ app.use("/api/gallery", galleryRoutes);
 app.use("/api/social", socialRoutes);
 app.use("/api/site-config", siteConfigRoutes);
 
-app.get("/api/health", (_, res) => res.json({ status: "ok" }));
-// LeetCode GraphQL proxy
+// ── Health check ──────────────────────────────────────────────────────
+app.get("/api/health", (_, res) =>
+    res.json({ status: "ok", time: new Date() }),
+);
+
+// ── LeetCode GraphQL proxy ────────────────────────────────────────────
 app.get("/api/leetcode/:username", async (req, res) => {
     try {
         const { username } = req.params;
@@ -49,20 +66,11 @@ app.get("/api/leetcode/:username", async (req, res) => {
         matchedUser(username: $username) {
           username
           submitStats {
-            acSubmissionNum {
-              difficulty
-              count
-            }
+            acSubmissionNum { difficulty count }
           }
-          profile {
-            ranking
-            reputation
-          }
+          profile { ranking reputation }
         }
-        allQuestionsCount {
-          difficulty
-          count
-        }
+        allQuestionsCount { difficulty count }
       }
     `;
 
@@ -88,45 +96,65 @@ app.get("/api/leetcode/:username", async (req, res) => {
         const allCounts = json.data.allQuestionsCount;
         const acStats = user.submitStats.acSubmissionNum;
 
-        // Parse solved counts
-        const easySolved =
-            acStats.find((s) => s.difficulty === "Easy")?.count || 0;
-        const mediumSolved =
-            acStats.find((s) => s.difficulty === "Medium")?.count || 0;
-        const hardSolved =
-            acStats.find((s) => s.difficulty === "Hard")?.count || 0;
-        const totalSolved =
-            acStats.find((s) => s.difficulty === "All")?.count || 0;
-
-        // Parse total available questions
-        const totalEasy =
-            allCounts.find((q) => q.difficulty === "Easy")?.count || 0;
-        const totalMedium =
-            allCounts.find((q) => q.difficulty === "Medium")?.count || 0;
-        const totalHard =
-            allCounts.find((q) => q.difficulty === "Hard")?.count || 0;
-        const totalAll =
-            allCounts.find((q) => q.difficulty === "All")?.count || 0;
-
         res.json({
             status: "success",
             username: user.username,
             ranking: user.profile.ranking,
             reputation: user.profile.reputation,
-            easySolved,
-            mediumSolved,
-            hardSolved,
-            totalSolved,
-            totalEasy,
-            totalMedium,
-            totalHard,
-            totalQuestions: totalAll,
+            easySolved:
+                acStats.find((s) => s.difficulty === "Easy")?.count || 0,
+            mediumSolved:
+                acStats.find((s) => s.difficulty === "Medium")?.count || 0,
+            hardSolved:
+                acStats.find((s) => s.difficulty === "Hard")?.count || 0,
+            totalSolved:
+                acStats.find((s) => s.difficulty === "All")?.count || 0,
+            totalEasy:
+                allCounts.find((q) => q.difficulty === "Easy")?.count || 0,
+            totalMedium:
+                allCounts.find((q) => q.difficulty === "Medium")?.count || 0,
+            totalHard:
+                allCounts.find((q) => q.difficulty === "Hard")?.count || 0,
+            totalQuestions:
+                allCounts.find((q) => q.difficulty === "All")?.count || 0,
         });
     } catch (err) {
         console.error("LeetCode API error:", err.message);
         res.status(500).json({ success: false, message: err.message });
     }
 });
+
+// ── Seed admin user ───────────────────────────────────────────────────
+async function seedAdmin() {
+    try {
+        // All models are in models/index.js
+        const { User } = await import("./models/index.js");
+
+        const email =
+            process.env.ADMIN_EMAIL_DEFAULT || "utkalbehera59@gmail.com";
+        const password = process.env.ADMIN_PASSWORD_DEFAULT || "Admin@123";
+
+        const existing = await User.findOne({ email });
+
+        if (!existing) {
+            // NOTE: userSchema has a pre-save hook that hashes the password
+            // So we pass plain password — the hook will hash it automatically
+            await User.create({
+                email,
+                password,
+                name: "Utkal Behera",
+                role: "admin",
+            });
+            console.log(`👤 Admin user created — ${email}`);
+        } else {
+            console.log(`👤 Admin user already exists — ${email}`);
+        }
+    } catch (err) {
+        console.error("❌ Seed admin error:", err.message);
+    }
+}
+
+// ── MongoDB connect + start server ────────────────────────────────────
 mongoose
     .connect(process.env.MONGO_URI)
     .then(async () => {
