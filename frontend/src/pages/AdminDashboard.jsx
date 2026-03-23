@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Routes, Route, NavLink, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import {
     LayoutDashboard,
     FolderKanban,
@@ -13,15 +12,13 @@ import {
     Link2,
     Settings,
     LogOut,
-    Github,
-    Code2,
     Menu,
     X,
     Bell,
+    Award,
 } from "lucide-react";
 import { useAuthStore, useMessageStore } from "../store/index.js";
 
-// Admin sub-pages
 import DashboardStats from "../components/admin/DashboardStats.jsx";
 import ProjectManager from "../components/admin/ProjectManager.jsx";
 import SkillManager from "../components/admin/SkillManager.jsx";
@@ -31,6 +28,8 @@ import GalleryManager from "../components/admin/GalleryManager.jsx";
 import SocialManager from "../components/admin/SocialManager.jsx";
 import HeroEditor from "../components/admin/HeroEditor.jsx";
 import ResumeManager from "../components/admin/ResumeManager.jsx";
+import CertificationManager from "../components/admin/CertificationManager.jsx";
+import EducationManager from "../components/admin/EducationManager.jsx";
 
 const NAV = [
     {
@@ -52,6 +51,12 @@ const NAV = [
         label: "Experience",
     },
     {
+        to: "/admin/education",
+        icon: <GraduationCap size={17} />,
+        label: "Education",
+    },
+    { to: "/admin/certs", icon: <Award size={17} />, label: "Certifications" },
+    {
         to: "/admin/messages",
         icon: <MessageSquare size={17} />,
         label: "Messages",
@@ -62,42 +67,29 @@ const NAV = [
     { to: "/admin/resume", icon: <FileText size={17} />, label: "Resume" },
 ];
 
-function Sidebar({ collapsed, onClose }) {
+function Sidebar({ onClose }) {
     const { logout } = useAuthStore();
     const { unread } = useMessageStore();
     const navigate = useNavigate();
 
-    const handleLogout = () => {
-        logout();
-        navigate("/admin/login");
-    };
-
     return (
-        <aside
-            className={`
-      flex flex-col bg-dark-bg2 border-r border-dark-border
-      transition-all duration-300 h-full
-      ${collapsed ? "w-0 overflow-hidden md:w-16" : "w-64"}
-    `}
-        >
+        <aside className="flex flex-col bg-dark-bg2 border-r border-dark-border w-64 h-full">
             {/* Logo */}
             <div className="h-16 flex items-center px-5 border-b border-dark-border flex-shrink-0">
-                <div className="flex items-center gap-3 overflow-hidden">
+                <div className="flex items-center gap-3">
                     <img
                         src="/logo/logo-icon.png"
                         alt="UB"
                         className="w-8 h-8 rounded-lg object-cover flex-shrink-0"
                     />
-                    {!collapsed && (
-                        <div>
-                            <div className="text-sm font-bold text-white leading-tight">
-                                Admin Panel
-                            </div>
-                            <div className="text-[10px] text-slate-500">
-                                Portfolio CMS
-                            </div>
+                    <div>
+                        <div className="text-sm font-bold text-white leading-tight">
+                            Admin Panel
                         </div>
-                    )}
+                        <div className="text-[10px] text-slate-500">
+                            Portfolio CMS
+                        </div>
+                    </div>
                 </div>
                 <button
                     onClick={onClose}
@@ -119,7 +111,7 @@ function Sidebar({ collapsed, onClose }) {
                         }}
                         className={({ isActive }) =>
                             `flex items-center gap-3 px-4 py-2.5 mx-2 rounded-xl text-sm font-medium
-              transition-all duration-200 group relative
+              transition-all duration-200 relative
               ${
                   isActive
                       ? "bg-accent-blue/15 text-accent-blue border border-accent-blue/20"
@@ -128,10 +120,11 @@ function Sidebar({ collapsed, onClose }) {
                         }
                     >
                         <span className="flex-shrink-0">{item.icon}</span>
-                        {!collapsed && <span>{item.label}</span>}
+                        <span>{item.label}</span>
                         {item.badge && unread > 0 && (
                             <span
-                                className={`ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-accent-blue text-white flex-shrink-0 ${collapsed ? "absolute top-1.5 right-1.5" : ""}`}
+                                className="ml-auto text-[10px] font-bold px-1.5 py-0.5
+                rounded-full bg-accent-blue text-white flex-shrink-0"
                             >
                                 {unread}
                             </span>
@@ -145,17 +138,20 @@ function Sidebar({ collapsed, onClose }) {
                 <a
                     href="/"
                     target="_blank"
-                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-slate-400
-            hover:text-white hover:bg-dark-card2 transition-all"
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm
+            text-slate-400 hover:text-white hover:bg-dark-card2 transition-all"
                 >
-                    <GraduationCap size={17} /> {!collapsed && "View Portfolio"}
+                    <GraduationCap size={17} /> View Portfolio
                 </a>
                 <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-slate-400
-            hover:text-red-400 hover:bg-red-500/10 transition-all mt-1"
+                    onClick={() => {
+                        logout();
+                        navigate("/admin/login");
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm
+            text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all mt-1"
                 >
-                    <LogOut size={17} /> {!collapsed && "Logout"}
+                    <LogOut size={17} /> Logout
                 </button>
             </div>
         </aside>
@@ -174,21 +170,18 @@ export default function AdminDashboard() {
 
     return (
         <div className="flex h-screen bg-dark-bg3 text-slate-100 overflow-hidden font-body">
-            {/* Sidebar - desktop always visible, mobile toggled */}
+            {/* Sidebar */}
             <div
                 className={`
         fixed inset-y-0 left-0 z-30 md:relative md:z-auto
-        ${sidebarOpen ? "block" : "hidden md:flex"}
+        ${sidebarOpen ? "flex" : "hidden md:flex"}
         flex-col
       `}
             >
-                <Sidebar
-                    collapsed={false}
-                    onClose={() => setSidebarOpen(false)}
-                />
+                <Sidebar onClose={() => setSidebarOpen(false)} />
             </div>
 
-            {/* Overlay for mobile */}
+            {/* Mobile overlay */}
             {sidebarOpen && (
                 <div
                     className="fixed inset-0 bg-black/50 z-20 md:hidden"
@@ -231,8 +224,9 @@ export default function AdminDashboard() {
                                     <Bell size={16} />
                                 </div>
                                 <span
-                                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent-blue
-                  text-white text-[9px] font-bold flex items-center justify-center"
+                                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full
+                  bg-accent-blue text-white text-[9px] font-bold
+                  flex items-center justify-center"
                                 >
                                     {unread}
                                 </span>
@@ -262,6 +256,14 @@ export default function AdminDashboard() {
                         <Route
                             path="experience"
                             element={<ExperienceManager />}
+                        />
+                        <Route
+                            path="education"
+                            element={<EducationManager />}
+                        />
+                        <Route
+                            path="certs"
+                            element={<CertificationManager />}
                         />
                         <Route path="messages" element={<MessageViewer />} />
                         <Route path="gallery" element={<GalleryManager />} />

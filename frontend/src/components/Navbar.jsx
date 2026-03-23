@@ -8,6 +8,7 @@ const NAV_ITEMS = [
     { label: "Skills", href: "#skills" },
     { label: "Projects", href: "#projects" },
     { label: "Experience", href: "#experience" },
+    { label: "Education", href: "#education" },
     { label: "Contact", href: "#contact" },
 ];
 
@@ -19,12 +20,14 @@ export default function Navbar() {
     const [active, setActive] = useState("");
 
     const name = config?.hero?.name || "Utkal Behera";
-    const initials = name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase();
+
+    // Dynamic nav items based on section visibility
+    const visibleNav = NAV_ITEMS.filter((item) => {
+        const key = item.href.slice(1);
+        // If config not loaded yet show all, else respect visibility
+        if (!config?.sections) return true;
+        return config.sections[key] !== false;
+    });
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 40);
@@ -32,7 +35,6 @@ export default function Navbar() {
         return () => window.removeEventListener("scroll", onScroll);
     }, []);
 
-    // Intersection observer for active section
     useEffect(() => {
         const ids = NAV_ITEMS.map((i) => i.href.slice(1));
         const observer = new IntersectionObserver(
@@ -65,9 +67,9 @@ export default function Navbar() {
                 <a href="#" className="flex items-center gap-2 group">
                     <img
                         src="/logo/logo-icon.png"
-                        alt="Utkal Behera Logo"
+                        alt="UB Logo"
                         className="w-9 h-9 rounded-xl object-cover
-                            group-hover:scale-105 transition-transform duration-200"
+              group-hover:scale-105 transition-transform duration-200"
                     />
                     <span className="font-bold text-slate-800 dark:text-white hidden sm:block font-display">
                         {name.split(" ")[0]}
@@ -77,11 +79,12 @@ export default function Navbar() {
 
                 {/* Desktop links */}
                 <div className="hidden md:flex items-center gap-1">
-                    {NAV_ITEMS.map((item) => (
+                    {visibleNav.map((item) => (
                         <a
                             key={item.href}
                             href={item.href}
-                            className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 hover-underline
+                            className={`relative px-4 py-2 rounded-lg text-sm font-medium
+                transition-all duration-200
                 ${
                     active === item.href.slice(1)
                         ? "text-accent-blue dark:text-accent-blue"
@@ -147,7 +150,6 @@ export default function Navbar() {
                         Hire Me
                     </a>
 
-                    {/* Mobile menu toggle */}
                     <button
                         onClick={() => setMenuOpen((v) => !v)}
                         className="md:hidden w-9 h-9 rounded-xl flex items-center justify-center
@@ -165,16 +167,21 @@ export default function Navbar() {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="md:hidden bg-white dark:bg-dark-bg2 border-t border-slate-100 dark:border-dark-border"
+                        className="md:hidden bg-white dark:bg-dark-bg2
+              border-t border-slate-100 dark:border-dark-border"
                     >
                         <div className="px-6 py-4 flex flex-col gap-1">
-                            {NAV_ITEMS.map((item) => (
+                            {visibleNav.map((item) => (
                                 <a
                                     key={item.href}
                                     href={item.href}
                                     onClick={() => setMenuOpen(false)}
-                                    className="py-3 px-4 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300
-                    hover:bg-slate-50 dark:hover:bg-dark-card2 transition-colors"
+                                    className={`py-3 px-4 rounded-xl text-sm font-medium transition-colors
+                    ${
+                        active === item.href.slice(1)
+                            ? "text-accent-blue bg-accent-blue/10"
+                            : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-dark-card2"
+                    }`}
                                 >
                                     {item.label}
                                 </a>
@@ -182,8 +189,8 @@ export default function Navbar() {
                             <a
                                 href="#contact"
                                 onClick={() => setMenuOpen(false)}
-                                className="mt-2 py-3 px-4 rounded-xl text-sm font-semibold text-center
-                  bg-grad-main text-white"
+                                className="mt-2 py-3 px-4 rounded-xl text-sm font-semibold
+                  text-center bg-grad-main text-white"
                             >
                                 Hire Me
                             </a>

@@ -16,7 +16,8 @@ import resumeRoutes from "./routes/resumeRoutes.js";
 import galleryRoutes from "./routes/galleryRoutes.js";
 import socialRoutes from "./routes/socialRoutes.js";
 import siteConfigRoutes from "./routes/siteConfigRoutes.js";
-
+import educationRoutes from "./routes/educationRoutes.js";
+import certRoutes from "./routes/certRoutes.js";
 const app = express();
 
 // ── CORS — allow all vercel + localhost ───────────────────────────────
@@ -50,7 +51,8 @@ app.use("/api/resume", resumeRoutes);
 app.use("/api/gallery", galleryRoutes);
 app.use("/api/social", socialRoutes);
 app.use("/api/site-config", siteConfigRoutes);
-
+app.use("/api/education", educationRoutes);
+app.use("/api/gallery/certs", certRoutes);
 // ── Health check ──────────────────────────────────────────────────────
 app.get("/api/health", (_, res) =>
     res.json({ status: "ok", time: new Date() }),

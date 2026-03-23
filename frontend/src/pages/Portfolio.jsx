@@ -7,6 +7,7 @@ import SkillSection from "../components/SkillSection.jsx";
 import ProjectGrid from "../components/ProjectGrid.jsx";
 import ExperienceTimeline from "../components/ExperienceTimeline.jsx";
 import Certifications from "../components/Certifications.jsx";
+import Education from "../components/Education.jsx";
 import ContactSection from "../components/ContactSection.jsx";
 import Footer from "../components/Footer.jsx";
 import GithubStats from "../components/GithubStats.jsx";
@@ -18,13 +19,13 @@ const SECTION_MAP = {
     skills: SkillSection,
     projects: ProjectGrid,
     experience: ExperienceTimeline,
+    education: Education,
     certificates: Certifications,
     github: GithubStats,
     leetcode: LeetcodeStats,
     contact: ContactSection,
 };
 
-// Apply theme colors to CSS variables
 function applyTheme(config) {
     if (!config?.theme) return;
     const root = document.documentElement;
@@ -34,7 +35,6 @@ function applyTheme(config) {
     if (config.theme.accentColor) {
         root.style.setProperty("--accent-purple", config.theme.accentColor);
     }
-    // Rebuild gradient with new colors
     const p = config.theme.primaryColor || "#4f8ef7";
     const a = config.theme.accentColor || "#8b5cf6";
     root.style.setProperty("--grad", `linear-gradient(135deg, ${p}, ${a})`);
@@ -46,8 +46,6 @@ export default function Portfolio() {
     useEffect(() => {
         fetch();
     }, []);
-
-    // Apply theme every time config loads/changes
     useEffect(() => {
         if (config) applyTheme(config);
     }, [config]);

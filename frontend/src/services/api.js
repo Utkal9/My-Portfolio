@@ -116,8 +116,8 @@ export const socialAPI = {
 
 // ── Certificates ─────────────────────────────────────────────────────
 export const certsAPI = {
-    getAll: () => api.get("/gallery?type=certificate"),
-    getAllAdmin: () => api.get("/gallery/certs"),
+    getAll: () => api.get("/gallery/certs"),
+    getAllAdmin: () => api.get("/gallery/certs/all"),
     create: (fd) =>
         api.post("/gallery/certs", fd, {
             headers: { "Content-Type": "multipart/form-data" },
