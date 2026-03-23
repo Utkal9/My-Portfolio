@@ -148,13 +148,43 @@ async function seedAdmin() {
         console.error("❌ Seed admin error:", err.message);
     }
 }
+async function migrateSiteConfig() {
+    try {
+        const { SiteConfig } = await import("./models/index.js");
+        const config = await SiteConfig.findOne();
+        if (!config) return;
 
+        // Add education to sectionOrder if missing
+        if (!config.sectionOrder.includes("education")) {
+            const idx = config.sectionOrder.indexOf("certificates");
+            const newOrder = [...config.sectionOrder];
+            newOrder.splice(idx, 0, "education");
+            config.sectionOrder = newOrder;
+            await config.save();
+            console.log(
+                "✅ SiteConfig migrated — education added to sectionOrder",
+            );
+        }
+
+        // Add education to sections if missing
+        if (config.sections?.education === undefined) {
+            config.sections = { ...config.sections, education: true };
+            await config.save();
+            console.log(
+                "✅ SiteConfig migrated — education section visibility added",
+            );
+        }
+    } catch (err) {
+        console.error("❌ Migration error:", err.message);
+    }
+}
 // ── MongoDB + Server ──────────────────────────────────────────────────
 mongoose
     .connect(process.env.MONGO_URI)
     .then(async () => {
         console.log("✅ MongoDB connected");
         await seedAdmin();
+        await migrateSiteConfig();
     })
     .catch((err) => console.error("MongoDB error:", err));
 
