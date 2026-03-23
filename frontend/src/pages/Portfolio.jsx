@@ -12,7 +12,6 @@ import ContactSection from "../components/ContactSection.jsx";
 import Footer from "../components/Footer.jsx";
 import GithubStats from "../components/GithubStats.jsx";
 import LeetcodeStats from "../components/LeetcodeStats.jsx";
-import AcademicTimeline from "../components/AcademicTimeline.jsx";
 
 const SECTION_MAP = {
     hero: Hero,
@@ -25,7 +24,6 @@ const SECTION_MAP = {
     github: GithubStats,
     leetcode: LeetcodeStats,
     contact: ContactSection,
-    academic: AcademicTimeline,
 };
 
 function applyTheme(config) {

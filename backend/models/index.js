@@ -108,8 +108,11 @@ const siteConfigSchema = new mongoose.Schema(
             ],
         },
         theme: {
-            primaryColor: { type: String, default: "#4f8ef7" },
-            accentColor: { type: String, default: "#8b5cf6" },
+            primaryColor: { type: String, default: "#4f8ef7" }, // Default accent-blue
+            secondaryColor: { type: String, default: "#9d4edd" }, // Default accent-purple
+            backgroundColor: { type: String, default: "#0a0f1c" }, // Default dark-bg
+            cardColor: { type: String, default: "#111827" }, // Default dark-card
+            fontFamily: { type: String, default: "Plus Jakarta Sans" },
         },
     },
     { timestamps: true },
