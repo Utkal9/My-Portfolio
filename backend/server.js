@@ -24,14 +24,15 @@ const app = express();
 app.use(
     cors({
         origin: (origin, callback) => {
-            const allowed = [
-                "http://localhost:5173",
-                "http://localhost:5174",
-                "http://localhost:3000",
-                process.env.FRONTEND_URL,
-            ].filter(Boolean);
+            // Allow all Vercel deployments for your project
             if (!origin) return callback(null, true);
-            if (allowed.includes(origin)) return callback(null, true);
+            if (
+                origin.includes("localhost") ||
+                origin.includes("vercel.app") ||
+                origin === process.env.FRONTEND_URL
+            ) {
+                return callback(null, true);
+            }
             callback(new Error(`CORS blocked: ${origin}`));
         },
         credentials: true,
