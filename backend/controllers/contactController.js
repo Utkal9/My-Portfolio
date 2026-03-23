@@ -9,7 +9,7 @@ async function createTransporter() {
     const oauth2Client = new OAuth2(
         process.env.GMAIL_CLIENT_ID,
         process.env.GMAIL_CLIENT_SECRET,
-        "https://developers.google.com/oauthplayground",
+        "urn:ietf:wg:oauth:2.0:oob", // ← Desktop app redirect URI
     );
 
     oauth2Client.setCredentials({
