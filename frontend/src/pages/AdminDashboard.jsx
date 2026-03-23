@@ -30,7 +30,7 @@ import HeroEditor from "../components/admin/HeroEditor.jsx";
 import ResumeManager from "../components/admin/ResumeManager.jsx";
 import CertificationManager from "../components/admin/CertificationManager.jsx";
 import EducationManager from "../components/admin/EducationManager.jsx";
-
+import SemesterManager from "../components/admin/SemesterManager.jsx";
 const NAV = [
     {
         to: "/admin",
@@ -65,6 +65,11 @@ const NAV = [
     { to: "/admin/gallery", icon: <Image size={17} />, label: "Media" },
     { to: "/admin/social", icon: <Link2 size={17} />, label: "Social Links" },
     { to: "/admin/resume", icon: <FileText size={17} />, label: "Resume" },
+    {
+        to: "/admin/semesters",
+        icon: <BookOpen size={17} />,
+        label: "Semesters",
+    },
 ];
 
 function Sidebar({ onClose }) {
@@ -269,6 +274,7 @@ export default function AdminDashboard() {
                         <Route path="gallery" element={<GalleryManager />} />
                         <Route path="social" element={<SocialManager />} />
                         <Route path="resume" element={<ResumeManager />} />
+                        <Route path="semesters" element={<SemesterManager />} />
                     </Routes>
                 </main>
             </div>

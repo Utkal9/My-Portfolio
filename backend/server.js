@@ -18,6 +18,7 @@ import socialRoutes from "./routes/socialRoutes.js";
 import siteConfigRoutes from "./routes/siteConfigRoutes.js";
 import educationRoutes from "./routes/educationRoutes.js";
 import certRoutes from "./routes/certRoutes.js";
+import semesterRoutes from "./routes/semesterRoutes.js";
 const app = express();
 
 // ── CORS — allow all vercel + localhost ───────────────────────────────
@@ -53,6 +54,7 @@ app.use("/api/social", socialRoutes);
 app.use("/api/site-config", siteConfigRoutes);
 app.use("/api/education", educationRoutes);
 app.use("/api/gallery/certs", certRoutes);
+app.use("/api/semesters", semesterRoutes);
 // ── Health check ──────────────────────────────────────────────────────
 app.get("/api/health", (_, res) =>
     res.json({ status: "ok", time: new Date() }),
@@ -173,6 +175,18 @@ async function migrateSiteConfig() {
             console.log(
                 "✅ SiteConfig migrated — education section visibility added",
             );
+        }
+        if (!config.sectionOrder.includes("academic")) {
+            const idx = config.sectionOrder.indexOf("education");
+            const newOrder = [...config.sectionOrder];
+            newOrder.splice(idx + 1, 0, "academic");
+            config.sectionOrder = newOrder;
+            await config.save();
+            console.log("✅ academic section added to sectionOrder");
+        }
+        if (config.sections?.academic === undefined) {
+            config.sections = { ...config.sections, academic: true };
+            await config.save();
         }
     } catch (err) {
         console.error("❌ Migration error:", err.message);

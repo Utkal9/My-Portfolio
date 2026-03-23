@@ -244,7 +244,28 @@ const educationSchema = new mongoose.Schema(
     },
     { timestamps: true },
 );
+// ── SEMESTER ─────────────────────────────────────────────────────────────────
+const courseSchema = new mongoose.Schema({
+    code: { type: String, required: true },
+    name: { type: String, required: true },
+    credits: { type: Number, required: true },
+    grade: {
+        type: String,
+        required: true,
+        enum: ["O", "A+", "A", "B+", "B", "C", "F"],
+    },
+});
 
+const semesterSchema = new mongoose.Schema(
+    {
+        semester: { type: Number, required: true }, // 1-8
+        year: { type: String, required: true }, // e.g. "2022-23"
+        label: { type: String, default: "" }, // e.g. "Odd Semester"
+        courses: [courseSchema],
+        visible: { type: Boolean, default: true },
+    },
+    { timestamps: true },
+);
 // Exports
 export const User = mongoose.model("User", userSchema);
 export const SiteConfig = mongoose.model("SiteConfig", siteConfigSchema);
@@ -256,3 +277,4 @@ export const Message = mongoose.model("Message", messageSchema);
 export const SocialLink = mongoose.model("SocialLink", socialLinkSchema);
 export const Resume = mongoose.model("Resume", resumeSchema);
 export const Education = mongoose.model("Education", educationSchema);
+export const Semester = mongoose.model("Semester", semesterSchema);

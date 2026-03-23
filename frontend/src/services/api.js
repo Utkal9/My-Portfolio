@@ -138,5 +138,11 @@ export const githubAPI = {
             `https://api.github.com/users/${username}/repos?sort=updated&per_page=6`,
         ),
 };
-
+export const semesterAPI = {
+    getAll: () => api.get("/semesters"),
+    getAllAdmin: () => api.get("/semesters/all"),
+    create: (data) => api.post("/semesters", data),
+    update: (id, data) => api.put(`/semesters/${id}`, data),
+    delete: (id) => api.delete(`/semesters/${id}`),
+};
 export default api;
