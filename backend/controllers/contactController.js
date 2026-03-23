@@ -15,17 +15,17 @@ export const sendMessage = async (req, res) => {
     }
 
     try {
-        // 1. Save to DB immediately
+        // 1. Save to DB
         const msg = await Message.create({ name, email, subject, message });
 
-        // 2. Respond to user instantly — don't wait for email
+        // 2. Respond instantly
         res.status(201).json({
             success: true,
             message: "Message sent! I will get back to you soon.",
             data: msg,
         });
 
-        // 3. Send emails in background — non-blocking
+        // 3. Send notification to you in background
         setImmediate(async () => {
             try {
                 const config = await SiteConfig.findOne();
@@ -40,8 +40,7 @@ export const sendMessage = async (req, res) => {
                     timeStyle: "short",
                 });
 
-                // ── Notification to YOU ───────────────────────────────────
-                const notifResult = await resend.emails.send({
+                const result = await resend.emails.send({
                     from: "Portfolio Contact <onboarding@resend.dev>",
                     to: [adminEmail],
                     subject: `📬 New message from ${name} — ${subject || "Portfolio Contact"}`,
@@ -52,7 +51,6 @@ export const sendMessage = async (req, res) => {
 <body style="margin:0;padding:0;background:#0a0f1e;font-family:'Segoe UI',Arial,sans-serif">
 <div style="max-width:600px;margin:0 auto;padding:32px 16px">
 
-  <!-- Header -->
   <div style="background:linear-gradient(135deg,#4f8ef7 0%,#8b5cf6 100%);
     border-radius:16px 16px 0 0;padding:32px;text-align:center">
     <div style="font-size:44px;margin-bottom:12px">📬</div>
@@ -64,11 +62,9 @@ export const sendMessage = async (req, res) => {
     </p>
   </div>
 
-  <!-- Body -->
   <div style="background:#0f1525;border:1px solid rgba(79,142,247,0.2);
     border-top:none;border-radius:0 0 16px 16px;padding:28px">
 
-    <!-- Sender info -->
     <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
       <tr>
         <td style="width:50%;padding:14px;
@@ -111,7 +107,6 @@ export const sendMessage = async (req, res) => {
       </tr>
     </table>
 
-    <!-- Message -->
     <div style="background:rgba(255,255,255,0.04);
       border:1px solid rgba(255,255,255,0.07);
       border-radius:12px;padding:20px;margin-bottom:24px">
@@ -125,7 +120,6 @@ export const sendMessage = async (req, res) => {
       </div>
     </div>
 
-    <!-- Reply button -->
     <div style="text-align:center;margin-bottom:24px">
       <a href="mailto:${email}?subject=Re%3A%20${encodeURIComponent(subject || "Your message")}"
         style="display:inline-block;
@@ -137,14 +131,12 @@ export const sendMessage = async (req, res) => {
       </a>
     </div>
 
-    <!-- Timestamp -->
     <div style="height:1px;background:rgba(255,255,255,0.06);margin-bottom:16px"></div>
     <p style="margin:0;color:rgba(148,163,200,0.35);font-size:11px;text-align:center">
       Received on ${receivedAt} IST
     </p>
   </div>
 
-  <!-- Footer -->
   <p style="margin:20px 0 0;color:rgba(148,163,200,0.25);font-size:11px;text-align:center">
     Sent from your portfolio contact form
   </p>
@@ -154,104 +146,10 @@ export const sendMessage = async (req, res) => {
           `,
                 });
 
-                if (notifResult.error) {
-                    console.error("❌ Notification error:", notifResult.error);
+                if (result.error) {
+                    console.error("❌ Notification error:", result.error);
                 } else {
                     console.log(`✅ Notification sent to ${adminEmail}`);
-                }
-
-                // ── Auto-reply to sender ──────────────────────────────────
-                const replyResult = await resend.emails.send({
-                    from: "Utkal Behera <onboarding@resend.dev>",
-                    to: [email],
-                    subject: `Thanks for reaching out, ${name}! 👋`,
-                    html: `
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width"/></head>
-<body style="margin:0;padding:0;background:#f0f4ff;font-family:'Segoe UI',Arial,sans-serif">
-<div style="max-width:600px;margin:0 auto;padding:32px 16px">
-
-  <!-- Header -->
-  <div style="background:linear-gradient(135deg,#4f8ef7 0%,#8b5cf6 100%);
-    border-radius:16px 16px 0 0;padding:32px;text-align:center">
-    <div style="font-size:44px;margin-bottom:12px">👋</div>
-    <h1 style="margin:0;color:#fff;font-size:24px;font-weight:800">
-      Thanks for reaching out!
-    </h1>
-  </div>
-
-  <!-- Body -->
-  <div style="background:#fff;border:1px solid #e2e8f0;
-    border-top:none;border-radius:0 0 16px 16px;padding:32px">
-
-    <p style="margin:0 0 16px;color:#1a1b2e;font-size:16px;line-height:1.6">
-      Hi <strong>${name}</strong>,
-    </p>
-    <p style="margin:0 0 16px;color:#475569;font-size:15px;line-height:1.75">
-      Thanks for getting in touch through my portfolio! I've received your
-      message and will get back to you as soon as possible —
-      usually within <strong>24 hours</strong>.
-    </p>
-
-    <!-- Their message -->
-    <div style="background:#f8faff;border-left:3px solid #4f8ef7;
-      border-radius:0 8px 8px 0;padding:16px;margin-bottom:24px">
-      <div style="color:#94a3b8;font-size:10px;text-transform:uppercase;
-        letter-spacing:0.1em;font-weight:700;margin-bottom:8px">
-        Your message
-      </div>
-      <div style="color:#475569;font-size:14px;line-height:1.7;
-        white-space:pre-wrap;word-break:break-word">
-        ${message.replace(/</g, "&lt;").replace(/>/g, "&gt;")}
-      </div>
-    </div>
-
-    <!-- Social links -->
-    <div style="text-align:center;margin-bottom:28px">
-      <a href="https://github.com/Utkal9"
-        style="display:inline-block;margin:0 6px;
-          background:#1a1b2e;color:#fff;text-decoration:none;
-          padding:10px 20px;border-radius:10px;font-size:13px;font-weight:700">
-        GitHub
-      </a>
-      <a href="https://linkedin.com/in/utkal-behera59"
-        style="display:inline-block;margin:0 6px;
-          background:#0077b5;color:#fff;text-decoration:none;
-          padding:10px 20px;border-radius:10px;font-size:13px;font-weight:700">
-        LinkedIn
-      </a>
-      <a href="https://leetcode.com/u/utkal59"
-        style="display:inline-block;margin:0 6px;
-          background:#f89f1b;color:#fff;text-decoration:none;
-          padding:10px 20px;border-radius:10px;font-size:13px;font-weight:700">
-        LeetCode
-      </a>
-    </div>
-
-    <p style="margin:0;color:#475569;font-size:15px;line-height:1.7">
-      Best regards,<br/>
-      <strong style="color:#1a1b2e;font-size:16px">Utkal Behera</strong><br/>
-      <span style="color:#94a3b8;font-size:13px">
-        Full Stack Developer &middot; MERN Stack &middot; LPU CSE
-      </span>
-    </p>
-  </div>
-
-  <!-- Footer -->
-  <p style="margin:20px 0 0;color:#94a3b8;font-size:11px;text-align:center">
-    This is an automated reply &mdash; please do not reply to this email.
-  </p>
-</div>
-</body>
-</html>
-          `,
-                });
-
-                if (replyResult.error) {
-                    console.error("❌ Auto-reply error:", replyResult.error);
-                } else {
-                    console.log(`✅ Auto-reply sent to ${email}`);
                 }
             } catch (mailErr) {
                 console.error("❌ Email error:", mailErr.message);
