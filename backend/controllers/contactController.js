@@ -1,22 +1,30 @@
 import nodemailer from "nodemailer";
 import { Message, SiteConfig } from "../models/index.js";
+import dns from "dns";
+
+// 🚀 RENDER TIMEOUT FIX: Force Node.js 22 to use IPv4 instead of IPv6
+dns.setDefaultResultOrder("ipv4first");
 
 // ── Create Transporter using built-in OAuth2 ──────────────────────────
 function createTransporter() {
     return nodemailer.createTransport({
-        service: "gmail",
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
         auth: {
             type: "OAuth2",
             user: process.env.MAIL_USER,
             clientId: process.env.GMAIL_CLIENT_ID,
             clientSecret: process.env.GMAIL_CLIENT_SECRET,
             refreshToken: process.env.GMAIL_REFRESH_TOKEN,
-            // Nodemailer automatically handles the access token generation!
         },
-        // Adding connection timeout settings for Render stability
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 10000,
+        // Prevent Render from dropping the connection prematurely
+        connectionTimeout: 20000,
+        greetingTimeout: 20000,
+        socketTimeout: 20000,
+        tls: {
+            rejectUnauthorized: false, // Helps bypass strict cloud firewall checks
+        },
     });
 }
 
@@ -57,7 +65,6 @@ export const sendMessage = async (req, res) => {
                     timeStyle: "short",
                 });
 
-                // Use the streamlined transporter
                 const transporter = createTransporter();
 
                 // ── Notification to YOU ───────────────────────────────────
