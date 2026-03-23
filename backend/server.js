@@ -1,4 +1,3 @@
-// dotenv MUST be the very first thing — before any other imports
 import dotenv from "dotenv";
 dotenv.config();
 import fetch from "node-fetch";
@@ -20,11 +19,10 @@ import siteConfigRoutes from "./routes/siteConfigRoutes.js";
 
 const app = express();
 
-// ── CORS ──────────────────────────────────────────────────────────────
+// ── CORS — allow all vercel + localhost ───────────────────────────────
 app.use(
     cors({
         origin: (origin, callback) => {
-            // Allow all Vercel deployments for your project
             if (!origin) return callback(null, true);
             if (
                 origin.includes("localhost") ||
@@ -125,21 +123,15 @@ app.get("/api/leetcode/:username", async (req, res) => {
     }
 });
 
-// ── Seed admin user ───────────────────────────────────────────────────
+// ── Seed admin ────────────────────────────────────────────────────────
 async function seedAdmin() {
     try {
-        // All models are in models/index.js
         const { User } = await import("./models/index.js");
-
         const email =
             process.env.ADMIN_EMAIL_DEFAULT || "utkalbehera59@gmail.com";
         const password = process.env.ADMIN_PASSWORD_DEFAULT || "Admin@123";
-
         const existing = await User.findOne({ email });
-
         if (!existing) {
-            // NOTE: userSchema has a pre-save hook that hashes the password
-            // So we pass plain password — the hook will hash it automatically
             await User.create({
                 email,
                 password,
@@ -155,7 +147,7 @@ async function seedAdmin() {
     }
 }
 
-// ── MongoDB connect + start server ────────────────────────────────────
+// ── MongoDB + Server ──────────────────────────────────────────────────
 mongoose
     .connect(process.env.MONGO_URI)
     .then(async () => {
