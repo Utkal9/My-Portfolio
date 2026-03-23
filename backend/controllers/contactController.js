@@ -1,23 +1,8 @@
 import nodemailer from "nodemailer";
-import { google } from "googleapis";
 import { Message, SiteConfig } from "../models/index.js";
 
-const OAuth2 = google.auth.OAuth2;
-
-// ── Create OAuth2 transporter ─────────────────────────────────────────
-async function createTransporter() {
-    const oauth2Client = new OAuth2(
-        process.env.GMAIL_CLIENT_ID,
-        process.env.GMAIL_CLIENT_SECRET,
-        "urn:ietf:wg:oauth:2.0:oob", // ← Desktop app redirect URI
-    );
-
-    oauth2Client.setCredentials({
-        refresh_token: process.env.GMAIL_REFRESH_TOKEN,
-    });
-
-    const accessToken = await oauth2Client.getAccessToken();
-
+// ── Create Transporter using built-in OAuth2 ──────────────────────────
+function createTransporter() {
     return nodemailer.createTransport({
         service: "gmail",
         auth: {
@@ -26,8 +11,12 @@ async function createTransporter() {
             clientId: process.env.GMAIL_CLIENT_ID,
             clientSecret: process.env.GMAIL_CLIENT_SECRET,
             refreshToken: process.env.GMAIL_REFRESH_TOKEN,
-            accessToken: accessToken.token,
+            // Nodemailer automatically handles the access token generation!
         },
+        // Adding connection timeout settings for Render stability
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 10000,
     });
 }
 
@@ -46,7 +35,7 @@ export const sendMessage = async (req, res) => {
         // 1. Save to DB
         const msg = await Message.create({ name, email, subject, message });
 
-        // 2. Respond instantly
+        // 2. Respond instantly to frontend
         res.status(201).json({
             success: true,
             message: "Message sent! I will get back to you soon.",
@@ -68,8 +57,8 @@ export const sendMessage = async (req, res) => {
                     timeStyle: "short",
                 });
 
-                // Create fresh transporter with new access token each time
-                const transporter = await createTransporter();
+                // Use the streamlined transporter
+                const transporter = createTransporter();
 
                 // ── Notification to YOU ───────────────────────────────────
                 await transporter.sendMail({
@@ -85,9 +74,6 @@ export const sendMessage = async (req, res) => {
     border-radius:16px 16px 0 0;padding:32px;text-align:center">
     <div style="font-size:40px;margin-bottom:12px">📬</div>
     <h1 style="margin:0;color:#fff;font-size:22px;font-weight:800">New Portfolio Message</h1>
-    <p style="margin:8px 0 0;color:rgba(255,255,255,0.75);font-size:14px">
-      Someone reached out through your portfolio
-    </p>
   </div>
   <div style="background:#0f1525;border:1px solid rgba(79,142,247,0.2);
     border-top:none;border-radius:0 0 16px 16px;padding:28px">
@@ -183,29 +169,12 @@ export const sendMessage = async (req, res) => {
         ${message.replace(/</g, "&lt;").replace(/>/g, "&gt;")}
       </div>
     </div>
-    <div style="text-align:center;margin-bottom:28px">
-      <a href="https://github.com/Utkal9"
-        style="display:inline-block;margin:0 6px;background:#1a1b2e;
-          color:#fff;text-decoration:none;padding:10px 22px;
-          border-radius:10px;font-size:13px;font-weight:700">GitHub</a>
-      <a href="https://linkedin.com/in/utkal-behera59"
-        style="display:inline-block;margin:0 6px;background:#0077b5;
-          color:#fff;text-decoration:none;padding:10px 22px;
-          border-radius:10px;font-size:13px;font-weight:700">LinkedIn</a>
-      <a href="https://leetcode.com/u/utkal59"
-        style="display:inline-block;margin:0 6px;background:#f89f1b;
-          color:#fff;text-decoration:none;padding:10px 22px;
-          border-radius:10px;font-size:13px;font-weight:700">LeetCode</a>
-    </div>
     <p style="margin:0;color:#475569;font-size:15px;line-height:1.7">
       Best regards,<br/>
       <strong style="color:#1a1b2e;font-size:16px">Utkal Behera</strong><br/>
-      <span style="color:#94a3b8;font-size:13px">Full Stack Developer · MERN Stack · LPU CSE</span>
+      <span style="color:#94a3b8;font-size:13px">Full Stack Developer</span>
     </p>
   </div>
-  <p style="margin:20px 0 0;color:#94a3b8;font-size:11px;text-align:center">
-    This is an automated reply — please do not reply to this email.
-  </p>
 </div>
 </body>
 </html>
