@@ -82,6 +82,7 @@ export const contactAPI = {
     getMessages: () => api.get("/contact/messages"),
     markRead: (id) => api.patch(`/contact/messages/${id}/read`),
     deleteMessage: (id) => api.delete(`/contact/messages/${id}`),
+    reply: (id, data) => api.post(`/contact/messages/${id}/reply`, data),
 };
 
 // ── Resume ───────────────────────────────────────────────────────────

@@ -200,3 +200,120 @@ export const deleteMessage = async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 };
+// ── POST /api/contact/messages/:id/reply (admin) ──────────────────────
+export const replyToMessage = async (req, res) => {
+    try {
+        const { replyText } = req.body;
+        const msg = await Message.findById(req.params.id);
+
+        if (!msg) {
+            return res
+                .status(404)
+                .json({ success: false, message: "Message not found" });
+        }
+        if (!replyText?.trim()) {
+            return res
+                .status(400)
+                .json({ success: false, message: "Reply text is required" });
+        }
+
+        const result = await resend.emails.send({
+            from: "Portfolio Contact <onboarding@resend.dev>",
+            to: [msg.email],
+            subject: `Re: ${msg.subject || "Your message"} — Utkal Behera`,
+            html: `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width"/></head>
+<body style="margin:0;padding:0;background:#f0f4ff;font-family:'Segoe UI',Arial,sans-serif">
+<div style="max-width:600px;margin:0 auto;padding:32px 16px">
+
+  <div style="background:linear-gradient(135deg,#4f8ef7 0%,#8b5cf6 100%);
+    border-radius:16px 16px 0 0;padding:32px;text-align:center">
+    <div style="font-size:44px;margin-bottom:12px">✉️</div>
+    <h1 style="margin:0;color:#fff;font-size:22px;font-weight:800">
+      Reply from Utkal Behera
+    </h1>
+    <p style="margin:10px 0 0;color:rgba(255,255,255,0.75);font-size:14px">
+      Regarding your message on his portfolio
+    </p>
+  </div>
+
+  <div style="background:#fff;border:1px solid #e2e8f0;
+    border-top:none;border-radius:0 0 16px 16px;padding:32px">
+
+    <p style="margin:0 0 16px;color:#1a1b2e;font-size:16px">
+      Hi <strong>${msg.name}</strong>,
+    </p>
+
+    <div style="color:#1a1b2e;font-size:15px;line-height:1.8;
+      white-space:pre-wrap;word-break:break-word;margin-bottom:28px">
+      ${replyText.replace(/</g, "&lt;").replace(/>/g, "&gt;")}
+    </div>
+
+    <div style="height:1px;background:#e2e8f0;margin-bottom:24px"></div>
+
+    <!-- Original message -->
+    <div style="background:#f8faff;border-left:3px solid #4f8ef7;
+      border-radius:0 8px 8px 0;padding:16px;margin-bottom:24px">
+      <div style="color:#94a3b8;font-size:10px;text-transform:uppercase;
+        letter-spacing:0.1em;font-weight:700;margin-bottom:8px">
+        Your original message
+      </div>
+      <div style="color:#64748b;font-size:13px;line-height:1.6;
+        white-space:pre-wrap;word-break:break-word">
+        ${msg.message.replace(/</g, "&lt;").replace(/>/g, "&gt;")}
+      </div>
+    </div>
+
+    <!-- Social links -->
+    <div style="text-align:center;margin-bottom:28px">
+      <a href="https://github.com/Utkal9"
+        style="display:inline-block;margin:0 6px;background:#1a1b2e;
+          color:#fff;text-decoration:none;padding:10px 20px;
+          border-radius:10px;font-size:13px;font-weight:700">GitHub</a>
+      <a href="https://linkedin.com/in/utkal-behera59"
+        style="display:inline-block;margin:0 6px;background:#0077b5;
+          color:#fff;text-decoration:none;padding:10px 20px;
+          border-radius:10px;font-size:13px;font-weight:700">LinkedIn</a>
+      <a href="https://my-portfolio-nu-flax-96.vercel.app"
+        style="display:inline-block;margin:0 6px;background:linear-gradient(135deg,#4f8ef7,#8b5cf6);
+          color:#fff;text-decoration:none;padding:10px 20px;
+          border-radius:10px;font-size:13px;font-weight:700">Portfolio</a>
+    </div>
+
+    <p style="margin:0;color:#475569;font-size:15px;line-height:1.7">
+      Best regards,<br/>
+      <strong style="color:#1a1b2e;font-size:16px">Utkal Behera</strong><br/>
+      <span style="color:#94a3b8;font-size:13px">
+        Full Stack Developer &middot; MERN Stack &middot; LPU CSE
+      </span>
+    </p>
+  </div>
+
+  <p style="margin:20px 0 0;color:#94a3b8;font-size:11px;text-align:center">
+    This email was sent from Utkal Behera's portfolio
+  </p>
+</div>
+</body>
+</html>
+      `,
+        });
+
+        if (result.error) {
+            console.error("❌ Reply error:", result.error);
+            return res
+                .status(500)
+                .json({ success: false, message: "Failed to send reply" });
+        }
+
+        // Mark message as read after reply
+        await Message.findByIdAndUpdate(req.params.id, { read: true });
+
+        console.log(`✅ Reply sent to ${msg.email}`);
+        res.json({ success: true, message: `Reply sent to ${msg.name}` });
+    } catch (err) {
+        console.error("❌ Reply error:", err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
