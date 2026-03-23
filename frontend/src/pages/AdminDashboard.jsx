@@ -16,6 +16,7 @@ import {
     X,
     Bell,
     Award,
+    BookOpen,
 } from "lucide-react";
 import { useAuthStore, useMessageStore } from "../store/index.js";
 
