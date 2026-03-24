@@ -32,6 +32,8 @@ const EMPTY = {
 
 // ── Live preview card — matches portfolio exactly ─────────────────────
 function PreviewCard({ project }) {
+    const hasVideo = project.videoUrl && project.videoUrl.trim() !== "";
+
     return (
         <div className="rounded-2xl overflow-hidden bg-dark-bg border border-dark-border">
             {/* Image */}
@@ -77,7 +79,7 @@ function PreviewCard({ project }) {
                 >
                     {project.category || "Web"}
                 </span>
-                {project.videoUrl && (
+                {hasVideo && (
                     <div
                         className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-0.5
             rounded-full bg-red-500/80 text-white text-[9px] font-bold z-10"
@@ -163,7 +165,7 @@ function PreviewCard({ project }) {
                             <Github size={9} /> Code
                         </div>
                     )}
-                    {project.videoUrl && (
+                    {hasVideo && (
                         <div
                             className="flex items-center justify-center px-2 py-1.5 rounded-xl
               bg-red-500/10 border border-red-500/20 text-red-400 text-[9px]"
@@ -215,7 +217,10 @@ function ProjectForm({ initial = EMPTY, onSave, onCancel, loading }) {
             .map((f) => f.trim())
             .filter(Boolean)
             .forEach((f) => fd.append("features", f));
-        if (form.videoUrl?.trim()) fd.append("videoUrl", form.videoUrl.trim());
+
+        // Explicitly append videoUrl, even if it's an empty string so the backend can clear it
+        fd.append("videoUrl", form.videoUrl ? form.videoUrl.trim() : "");
+
         imageFiles.forEach((f) => fd.append("images", f));
         onSave(fd);
     };
@@ -369,7 +374,7 @@ function ProjectForm({ initial = EMPTY, onSave, onCancel, loading }) {
                 <div>
                     <Label
                         text="Demo Video URL"
-                        hint="YouTube / Loom / Vimeo"
+                        hint="YouTube / Loom / Vimeo (leave empty to remove)"
                     />
                     <input
                         value={form.videoUrl || ""}
@@ -377,7 +382,7 @@ function ProjectForm({ initial = EMPTY, onSave, onCancel, loading }) {
                         className={inputClass}
                         placeholder="https://youtube.com/watch?v=..."
                     />
-                    {form.videoUrl && (
+                    {form.videoUrl?.trim() && (
                         <p className="text-[9px] text-green-400 mt-1">
                             ✓ Video added — play button will show on card
                         </p>
@@ -653,128 +658,136 @@ export default function ProjectManager() {
 
             {/* Projects grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {sorted.map((p) => (
-                    <motion.div
-                        key={p._id}
-                        layout
-                        className={`bg-dark-card rounded-2xl overflow-hidden transition-all
-              hover:border-accent-blue/30 group
-              ${p.featured ? "border border-accent-blue/30" : "border border-dark-border"}`}
-                    >
-                        {/* Image */}
-                        <div className="h-36 bg-dark-bg2 relative overflow-hidden flex items-center justify-center">
-                            {p.images?.[0]?.url ? (
-                                <img
-                                    src={p.images[0].url}
-                                    alt={p.title}
-                                    className="w-full h-full object-cover opacity-70"
-                                />
-                            ) : (
-                                <span className="text-4xl opacity-20">💼</span>
-                            )}
-                            <div className="absolute inset-0 bg-gradient-to-t from-dark-card/80 to-transparent" />
-                            <div className="absolute top-2 left-2 flex gap-1.5 z-10">
-                                {p.featured && (
-                                    <span
-                                        className="flex items-center gap-1 px-2 py-0.5 rounded-full
-                    bg-amber-400/20 border border-amber-400/30 text-amber-300 text-[9px] font-bold"
-                                    >
-                                        <Star size={7} fill="currentColor" />{" "}
-                                        Featured
+                {sorted.map((p) => {
+                    const hasVideo = p.videoUrl && p.videoUrl.trim() !== "";
+                    return (
+                        <motion.div
+                            key={p._id}
+                            layout
+                            className={`bg-dark-card rounded-2xl overflow-hidden transition-all
+                hover:border-accent-blue/30 group
+                ${p.featured ? "border border-accent-blue/30" : "border border-dark-border"}`}
+                        >
+                            {/* Image */}
+                            <div className="h-36 bg-dark-bg2 relative overflow-hidden flex items-center justify-center">
+                                {p.images?.[0]?.url ? (
+                                    <img
+                                        src={p.images[0].url}
+                                        alt={p.title}
+                                        className="w-full h-full object-cover opacity-70"
+                                    />
+                                ) : (
+                                    <span className="text-4xl opacity-20">
+                                        💼
                                     </span>
                                 )}
-                                {p.liveUrl && (
-                                    <span
-                                        className="flex items-center gap-1 px-2 py-0.5 rounded-full
-                    bg-green-500/10 border border-green-500/20 text-green-400 text-[9px] font-bold"
-                                    >
-                                        <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse" />{" "}
-                                        Live
-                                    </span>
-                                )}
-                                {p.videoUrl && (
-                                    <span
-                                        className="px-2 py-0.5 rounded-full bg-red-500/15
-                    border border-red-500/20 text-red-400 text-[9px] font-bold"
-                                    >
-                                        ▶
-                                    </span>
-                                )}
+                                <div className="absolute inset-0 bg-gradient-to-t from-dark-card/80 to-transparent" />
+                                <div className="absolute top-2 left-2 flex gap-1.5 z-10">
+                                    {p.featured && (
+                                        <span
+                                            className="flex items-center gap-1 px-2 py-0.5 rounded-full
+                      bg-amber-400/20 border border-amber-400/30 text-amber-300 text-[9px] font-bold"
+                                        >
+                                            <Star
+                                                size={7}
+                                                fill="currentColor"
+                                            />{" "}
+                                            Featured
+                                        </span>
+                                    )}
+                                    {p.liveUrl && (
+                                        <span
+                                            className="flex items-center gap-1 px-2 py-0.5 rounded-full
+                      bg-green-500/10 border border-green-500/20 text-green-400 text-[9px] font-bold"
+                                        >
+                                            <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse" />{" "}
+                                            Live
+                                        </span>
+                                    )}
+                                    {hasVideo && (
+                                        <span
+                                            className="px-2 py-0.5 rounded-full bg-red-500/15
+                      border border-red-500/20 text-red-400 text-[9px] font-bold"
+                                        >
+                                            ▶
+                                        </span>
+                                    )}
+                                </div>
+                                <span
+                                    className="absolute bottom-2 right-2 text-[9px] px-2 py-0.5
+                  rounded-full bg-black/50 text-slate-400 border border-white/10 z-10"
+                                >
+                                    {p.category}
+                                </span>
                             </div>
-                            <span
-                                className="absolute bottom-2 right-2 text-[9px] px-2 py-0.5
-                rounded-full bg-black/50 text-slate-400 border border-white/10 z-10"
-                            >
-                                {p.category}
-                            </span>
-                        </div>
 
-                        <div className="p-4">
-                            <div className="text-[9px] font-bold text-accent-blue uppercase tracking-wider mb-1">
-                                {p.startDate}
-                                {p.endDate ? ` – ${p.endDate}` : ""}
-                            </div>
-                            <h4 className="font-bold text-white text-sm mb-1">
-                                {p.title}
-                            </h4>
-                            {p.tagline && (
-                                <p className="text-[10px] text-accent-blue mb-1.5 line-clamp-1">
-                                    {p.tagline}
-                                </p>
-                            )}
-                            {p.problem && (
-                                <p
-                                    className="text-[10px] text-slate-500 italic mb-2
-                  pl-2 border-l-2 border-accent-blue/30 line-clamp-1"
-                                >
-                                    {p.problem}
-                                </p>
-                            )}
-                            {p.features?.length > 0 && (
-                                <p className="text-[9px] text-slate-600 mb-2">
-                                    ✨ {p.features.length} features listed
-                                </p>
-                            )}
-                            <div className="flex flex-wrap gap-1 mb-3">
-                                {p.techStack?.slice(0, 4).map((t) => (
-                                    <span
-                                        key={t}
-                                        className="text-[9px] px-2 py-0.5 rounded-full
-                    bg-accent-blue/10 text-accent-blue border border-accent-blue/20"
-                                    >
-                                        {t}
-                                    </span>
-                                ))}
-                                {p.techStack?.length > 4 && (
-                                    <span
-                                        className="text-[9px] px-2 py-0.5 rounded-full
-                    bg-dark-bg text-slate-500"
-                                    >
-                                        +{p.techStack.length - 4}
-                                    </span>
+                            <div className="p-4">
+                                <div className="text-[9px] font-bold text-accent-blue uppercase tracking-wider mb-1">
+                                    {p.startDate}
+                                    {p.endDate ? ` – ${p.endDate}` : ""}
+                                </div>
+                                <h4 className="font-bold text-white text-sm mb-1">
+                                    {p.title}
+                                </h4>
+                                {p.tagline && (
+                                    <p className="text-[10px] text-accent-blue mb-1.5 line-clamp-1">
+                                        {p.tagline}
+                                    </p>
                                 )}
+                                {p.problem && (
+                                    <p
+                                        className="text-[10px] text-slate-500 italic mb-2
+                    pl-2 border-l-2 border-accent-blue/30 line-clamp-1"
+                                    >
+                                        {p.problem}
+                                    </p>
+                                )}
+                                {p.features?.length > 0 && (
+                                    <p className="text-[9px] text-slate-600 mb-2">
+                                        ✨ {p.features.length} features listed
+                                    </p>
+                                )}
+                                <div className="flex flex-wrap gap-1 mb-3">
+                                    {p.techStack?.slice(0, 4).map((t) => (
+                                        <span
+                                            key={t}
+                                            className="text-[9px] px-2 py-0.5 rounded-full
+                      bg-accent-blue/10 text-accent-blue border border-accent-blue/20"
+                                        >
+                                            {t}
+                                        </span>
+                                    ))}
+                                    {p.techStack?.length > 4 && (
+                                        <span
+                                            className="text-[9px] px-2 py-0.5 rounded-full
+                      bg-dark-bg text-slate-500"
+                                        >
+                                            +{p.techStack.length - 4}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setEditing(p)}
+                                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl
+                      border border-dark-border text-slate-400 hover:text-accent-blue
+                      hover:border-accent-blue/30 text-xs font-medium transition-all"
+                                    >
+                                        <Edit2 size={12} /> Edit
+                                    </button>
+                                    <button
+                                        onClick={() => setDelId(p._id)}
+                                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl
+                      border border-dark-border text-slate-400 hover:text-red-400
+                      hover:border-red-400/30 text-xs font-medium transition-all"
+                                    >
+                                        <Trash2 size={12} /> Delete
+                                    </button>
+                                </div>
                             </div>
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => setEditing(p)}
-                                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl
-                    border border-dark-border text-slate-400 hover:text-accent-blue
-                    hover:border-accent-blue/30 text-xs font-medium transition-all"
-                                >
-                                    <Edit2 size={12} /> Edit
-                                </button>
-                                <button
-                                    onClick={() => setDelId(p._id)}
-                                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl
-                    border border-dark-border text-slate-400 hover:text-red-400
-                    hover:border-red-400/30 text-xs font-medium transition-all"
-                                >
-                                    <Trash2 size={12} /> Delete
-                                </button>
-                            </div>
-                        </div>
-                    </motion.div>
-                ))}
+                        </motion.div>
+                    );
+                })}
             </div>
 
             {/* Delete confirm */}

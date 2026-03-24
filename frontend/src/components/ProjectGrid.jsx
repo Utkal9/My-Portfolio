@@ -33,7 +33,9 @@ function getYoutubeThumbnail(url) {
 // ── Stats bar ─────────────────────────────────────────────────────────
 function StatsBar({ projects }) {
     const live = projects.filter((p) => p.liveUrl).length;
-    const vids = projects.filter((p) => p.videoUrl).length;
+    const vids = projects.filter(
+        (p) => p.videoUrl && p.videoUrl.trim() !== "",
+    ).length;
     const techs = new Set(projects.flatMap((p) => p.techStack || [])).size;
     return (
         <div className="flex gap-8 justify-center mb-10 flex-wrap">
@@ -67,6 +69,7 @@ function StatsBar({ projects }) {
 function ProjectCard({ project, onClick, index }) {
     const thumb =
         getYoutubeThumbnail(project.videoUrl) || project.images?.[0]?.url;
+    const hasVideo = project.videoUrl && project.videoUrl.trim() !== "";
 
     const gradients = [
         "from-blue-100 to-indigo-100 dark:from-blue-950/60 dark:to-indigo-950/60",
@@ -147,7 +150,7 @@ function ProjectCard({ project, onClick, index }) {
                 >
                     {project.category}
                 </span>
-                {project.videoUrl && (
+                {hasVideo && (
                     <div
                         className="absolute bottom-3 right-3 flex items-center gap-1 px-2.5 py-1
             rounded-full bg-red-500/80 text-white text-[9px] font-bold z-10"
@@ -225,7 +228,7 @@ function ProjectCard({ project, onClick, index }) {
                             <Github size={11} /> Code
                         </a>
                     )}
-                    {project.videoUrl && (
+                    {hasVideo && (
                         <button
                             onClick={onClick}
                             className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl
@@ -243,11 +246,11 @@ function ProjectCard({ project, onClick, index }) {
 
 // ── Case study modal ──────────────────────────────────────────────────
 function ProjectModal({ project, onClose }) {
+    const hasVideo = project.videoUrl && project.videoUrl.trim() !== "";
     const [muted, setMuted] = useState(false);
-    const [tab, setTab] = useState(project.videoUrl ? "video" : "details");
-    const embedUrl = project.videoUrl
-        ? getEmbedUrl(project.videoUrl, muted)
-        : null;
+    const [tab, setTab] = useState(hasVideo ? "video" : "details");
+
+    const embedUrl = hasVideo ? getEmbedUrl(project.videoUrl, muted) : null;
     const thumb =
         getYoutubeThumbnail(project.videoUrl) || project.images?.[0]?.url;
 
@@ -261,7 +264,7 @@ function ProjectModal({ project, onClose }) {
             document.body.style.overflow = "";
             window.removeEventListener("keydown", h);
         };
-    }, []);
+    }, [onClose]);
 
     return (
         <AnimatePresence>
@@ -297,7 +300,7 @@ function ProjectModal({ project, onClose }) {
                     {/* Tabs */}
                     <div className="flex border-b border-slate-100 dark:border-dark-border flex-shrink-0">
                         {[
-                            ...(project.videoUrl
+                            ...(hasVideo
                                 ? [{ id: "video", label: "▶  Demo Video" }]
                                 : []),
                             { id: "details", label: "📋  Case Study" },
@@ -528,7 +531,7 @@ function ProjectModal({ project, onClose }) {
                                 <Github size={14} /> GitHub
                             </a>
                         )}
-                        {project.videoUrl && tab !== "video" && (
+                        {hasVideo && tab !== "video" && (
                             <button
                                 onClick={() => setTab("video")}
                                 className="flex items-center gap-2 px-4 py-3 rounded-xl

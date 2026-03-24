@@ -71,6 +71,12 @@ export const createProject = async (req, res) => {
 export const updateProject = async (req, res) => {
     try {
         const updates = { ...req.body };
+
+        // Explicitly allow clearing videoUrl if it's sent as empty string
+        if (req.body.videoUrl !== undefined) {
+            updates.videoUrl = req.body.videoUrl.trim();
+        }
+
         if (req.files?.length) {
             const images = [];
             for (const file of req.files) {
@@ -83,6 +89,7 @@ export const updateProject = async (req, res) => {
             updates.images = images;
         }
         updates.techStack = parseTechStack(updates.techStack);
+
         const project = await Project.findByIdAndUpdate(
             req.params.id,
             updates,
