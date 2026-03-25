@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Code2, ExternalLink, Trophy, RefreshCw } from "lucide-react";
+import { ActivityCalendar } from "react-activity-calendar";
 
 const USERNAME = "utkal59";
 
 export default function LeetcodeStats() {
     const [stats, setStats] = useState(null);
+    const [calendarData, setCalendarData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
 
@@ -14,6 +16,7 @@ export default function LeetcodeStats() {
         setError(false);
 
         try {
+            // 1. Fetch main stats from your own backend
             const base =
                 import.meta.env.VITE_API_URL || "http://localhost:5000/api";
             const res = await fetch(`${base}/leetcode/${USERNAME}`);
@@ -23,6 +26,19 @@ export default function LeetcodeStats() {
                 setStats(data);
             } else {
                 setError(true);
+            }
+
+            // 2. Fetch the calendar directly from a public API to guarantee green blocks show up
+            try {
+                const calRes = await fetch(
+                    `https://alfa-leetcode-api.onrender.com/${USERNAME}/calendar`,
+                );
+                const calData = await calRes.json();
+                if (calData && calData.submissionCalendar) {
+                    setCalendarData(calData.submissionCalendar);
+                }
+            } catch (calErr) {
+                console.error("Failed to fetch LeetCode calendar:", calErr);
             }
         } catch (err) {
             setError(true);
@@ -61,6 +77,56 @@ export default function LeetcodeStats() {
           ]
         : [];
 
+    // Transform submissionCalendar into react-activity-calendar format
+    const getCalendarActivities = () => {
+        // Fallback to stats.submissionCalendar just in case your backend adds it later
+        const rawCalendar = calendarData || (stats && stats.submissionCalendar);
+        if (!rawCalendar) return null;
+
+        try {
+            const calendarObj =
+                typeof rawCalendar === "string"
+                    ? JSON.parse(rawCalendar)
+                    : rawCalendar;
+
+            const activities = [];
+            const today = new Date();
+
+            // Generate last 365 days with 0 counts initially
+            for (let i = 365; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                const dateStr = date.toISOString().split("T")[0];
+                activities.push({ date: dateStr, count: 0, level: 0 });
+            }
+
+            // Map the actual submissions to the corresponding days
+            Object.keys(calendarObj).forEach((timestamp) => {
+                const count = calendarObj[timestamp];
+                const date = new Date(parseInt(timestamp) * 1000);
+                const dateStr = date.toISOString().split("T")[0];
+
+                const activity = activities.find((a) => a.date === dateStr);
+                if (activity) {
+                    activity.count += count;
+                    // Determine intensity level (0-4) based on submission count
+                    if (activity.count === 1) activity.level = 1;
+                    else if (activity.count >= 2 && activity.count <= 3)
+                        activity.level = 2;
+                    else if (activity.count >= 4 && activity.count <= 5)
+                        activity.level = 3;
+                    else if (activity.count >= 6) activity.level = 4;
+                }
+            });
+            return activities;
+        } catch (e) {
+            console.error("Failed to parse LeetCode calendar data", e);
+            return null;
+        }
+    };
+
+    const activityData = getCalendarActivities();
+
     return (
         <section id="leetcode" className="py-20">
             <div className="section-container">
@@ -98,7 +164,6 @@ export default function LeetcodeStats() {
                                     />
                                 </div>
 
-                                {/* ✅ FIXED LINK */}
                                 <div>
                                     <div className="font-bold text-slate-900 dark:text-white">
                                         {USERNAME}
@@ -233,8 +298,10 @@ export default function LeetcodeStats() {
                                     ))}
                                 </div>
 
-                                {/* Bottom */}
-                                <div className="pt-5 border-t border-slate-100 dark:border-dark-border grid grid-cols-3 gap-4 text-center">
+                                {/* Bottom Stats */}
+                                <div
+                                    className={`pt-5 ${activityData ? "pb-8" : ""} border-t border-slate-100 dark:border-dark-border grid grid-cols-3 gap-4 text-center`}
+                                >
                                     <div>
                                         <div className="text-lg font-bold text-slate-900 dark:text-white">
                                             #
@@ -265,6 +332,43 @@ export default function LeetcodeStats() {
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Heatmap Streak */}
+                                {activityData && (
+                                    <div className="pt-8 border-t border-slate-100 dark:border-dark-border flex flex-col items-center overflow-x-auto">
+                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 block">
+                                            Submission Streak
+                                        </span>
+                                        <div className="scale-90 sm:scale-100 w-full flex justify-center">
+                                            <ActivityCalendar
+                                                data={activityData}
+                                                blockSize={12}
+                                                blockMargin={4}
+                                                fontSize={12}
+                                                theme={{
+                                                    light: [
+                                                        "#ebedf0",
+                                                        "#9be9a8",
+                                                        "#40c463",
+                                                        "#30a14e",
+                                                        "#216e39",
+                                                    ],
+                                                    dark: [
+                                                        "#161b22",
+                                                        "#0e4429",
+                                                        "#006d32",
+                                                        "#26a641",
+                                                        "#39d353",
+                                                    ],
+                                                }}
+                                                labels={{
+                                                    totalCount:
+                                                        "{{count}} submissions in the last year",
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
                             </>
                         )}
                     </motion.div>

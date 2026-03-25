@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Github, Star, GitFork, ExternalLink, RefreshCw } from "lucide-react";
+import { GitHubCalendar } from "react-github-calendar";
 import axios from "axios";
 
 const USERNAME = "Utkal9";
@@ -175,6 +176,38 @@ export function GithubStats() {
                                 </div>
                             </motion.div>
                         )}
+
+                        {/* GitHub Contribution Heatmap */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.5 }}
+                            className="flex justify-center mb-12 overflow-x-auto p-6 rounded-2xl bg-white dark:bg-dark-card border border-slate-100 dark:border-dark-border"
+                        >
+                            <GitHubCalendar
+                                username={USERNAME}
+                                blockSize={12}
+                                blockMargin={4}
+                                fontSize={12}
+                                theme={{
+                                    light: [
+                                        "#ebedf0",
+                                        "#9be9a8",
+                                        "#40c463",
+                                        "#30a14e",
+                                        "#216e39",
+                                    ],
+                                    dark: [
+                                        "#161b22",
+                                        "#0e4429",
+                                        "#006d32",
+                                        "#26a641",
+                                        "#39d353",
+                                    ],
+                                }}
+                            />
+                        </motion.div>
 
                         {/* Repos grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
