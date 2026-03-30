@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSiteConfigStore } from "../store/index.js";
 import Navbar from "../components/Navbar.jsx";
 import Hero from "../components/Hero.jsx";
@@ -12,6 +12,7 @@ import ContactSection from "../components/ContactSection.jsx";
 import Footer from "../components/Footer.jsx";
 import GithubStats from "../components/GithubStats.jsx";
 import LeetcodeStats from "../components/LeetcodeStats.jsx";
+import CloudIntro from "../components/CloudIntro.jsx";
 
 const SECTION_MAP = {
     hero: Hero,
@@ -43,6 +44,16 @@ function applyTheme(config) {
 export default function Portfolio() {
     const { config, fetch } = useSiteConfigStore();
 
+    // Show intro once per session
+    const [showIntro, setShowIntro] = useState(
+        () => !sessionStorage.getItem("intro_seen"),
+    );
+
+    const handleIntroDone = () => {
+        sessionStorage.setItem("intro_seen", "1");
+        setShowIntro(false);
+    };
+
     useEffect(() => {
         fetch();
     }, []);
@@ -55,6 +66,9 @@ export default function Portfolio() {
 
     return (
         <div className="min-h-screen bg-light-bg dark:bg-dark-bg transition-colors duration-300">
+            {/* Cloud intro — shows once per session */}
+            {showIntro && <CloudIntro onDone={handleIntroDone} />}
+
             <Navbar />
             <main>
                 {order.map((key) => {

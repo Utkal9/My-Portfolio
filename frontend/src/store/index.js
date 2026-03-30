@@ -196,17 +196,20 @@ export const useExperienceStore = create((set) => ({
         set({ experience: data.data });
     },
 
-    create: async (d) => {
-        const { data } = await experienceAPI.create(d);
-        set((s) => ({ experience: [data.data, ...s.experience] }));
-        return data.data;
+    create: async (fd) => {
+        const res = await api.post("/experience", fd, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
+        // refresh
+        get().fetchAdmin();
+        return res;
     },
-
-    update: async (id, d) => {
-        const { data } = await experienceAPI.update(id, d);
-        set((s) => ({
-            experience: s.experience.map((e) => (e._id === id ? data.data : e)),
-        }));
+    update: async (id, fd) => {
+        const res = await api.put(`/experience/${id}`, fd, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
+        get().fetchAdmin();
+        return res;
     },
 
     delete: async (id) => {
