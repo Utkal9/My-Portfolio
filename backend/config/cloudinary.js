@@ -30,7 +30,7 @@ export const uploadAny = multer({ storage: memStorage });
 export function uploadBuffer(
     buffer,
     folder = "portfolio/misc",
-    resourceType = "image",
+    resourceType = "auto", // <-- CHANGED from "image" to "auto" to support PDFs
 ) {
     return new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(

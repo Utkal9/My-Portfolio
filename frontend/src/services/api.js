@@ -71,8 +71,15 @@ export const skillsAPI = {
 export const experienceAPI = {
     getAll: () => api.get("/experience"),
     getAllAdmin: () => api.get("/experience/all"),
-    create: (data) => api.post("/experience", data),
-    update: (id, data) => api.put(`/experience/${id}`, data),
+    // 👇 ADD HEADERS FOR FILE UPLOADS 👇
+    create: (data) =>
+        api.post("/experience", data, {
+            headers: { "Content-Type": "multipart/form-data" },
+        }),
+    update: (id, data) =>
+        api.put(`/experience/${id}`, data, {
+            headers: { "Content-Type": "multipart/form-data" },
+        }),
     delete: (id) => api.delete(`/experience/${id}`),
 };
 

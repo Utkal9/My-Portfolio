@@ -54,12 +54,23 @@ router.put("/:id", auth, uploadCert.single("certificate"), async (req, res) => {
             return res
                 .status(404)
                 .json({ success: false, message: "Not found" });
+
         const data = { ...req.body };
+
         if (req.body["techStack[]"]) {
             data.techStack = Array.isArray(req.body["techStack[]"])
                 ? req.body["techStack[]"]
                 : [req.body["techStack[]"]];
         }
+
+        // Handle certificate removal if user clicked 'X' on frontend
+        if (req.body.removeCertificate === "true") {
+            if (existing.certificate?.publicId) {
+                await deleteAsset(existing.certificate.publicId);
+            }
+            data.certificate = { url: "", publicId: "" };
+        }
+
         if (req.file) {
             if (existing.certificate?.publicId)
                 await deleteAsset(existing.certificate.publicId);
@@ -69,6 +80,7 @@ router.put("/:id", auth, uploadCert.single("certificate"), async (req, res) => {
             );
             data.certificate = { url: result.url, publicId: result.public_id };
         }
+
         const exp = await Experience.findByIdAndUpdate(req.params.id, data, {
             new: true,
         });

@@ -177,7 +177,8 @@ export const useSkillStore = create((set) => ({
 }));
 
 // ── Experience Store ────────────────────────────────────────────────────
-export const useExperienceStore = create((set) => ({
+// 👇 NOTICE: I added 'get' right here next to 'set'!
+export const useExperienceStore = create((set, get) => ({
     experience: [],
     loading: false,
 
@@ -197,17 +198,16 @@ export const useExperienceStore = create((set) => ({
     },
 
     create: async (fd) => {
-        const res = await api.post("/experience", fd, {
-            headers: { "Content-Type": "multipart/form-data" },
-        });
+        // 👇 FIXED: Using .create() instead of .post()
+        const res = await experienceAPI.create(fd);
         // refresh
         get().fetchAdmin();
         return res;
     },
+
     update: async (id, fd) => {
-        const res = await api.put(`/experience/${id}`, fd, {
-            headers: { "Content-Type": "multipart/form-data" },
-        });
+        // 👇 FIXED: Using .update() instead of .put()
+        const res = await experienceAPI.update(id, fd);
         get().fetchAdmin();
         return res;
     },

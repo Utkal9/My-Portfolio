@@ -52,12 +52,20 @@ function ExpForm({ initial = EMPTY, onSave, onCancel, loading }) {
         fd.append("startDate", form.startDate);
         fd.append("endDate", form.endDate);
         fd.append("description", form.description);
+
         const stack = form.techStack
             .split(",")
             .map((t) => t.trim())
             .filter(Boolean);
         stack.forEach((t) => fd.append("techStack[]", t));
-        if (certFile) fd.append("certificate", certFile);
+
+        if (certFile) {
+            fd.append("certificate", certFile);
+        } else if (initial.certificate?.url && !certPreview) {
+            // Signal to backend that the certificate was removed
+            fd.append("removeCertificate", "true");
+        }
+
         onSave(fd);
     };
 
@@ -120,11 +128,12 @@ function ExpForm({ initial = EMPTY, onSave, onCancel, loading }) {
                         className="block text-[10px] text-slate-400 font-bold
             uppercase tracking-wider mb-1.5"
                     >
-                        Start Date
+                        Start Date *
                     </label>
                     <input
                         value={form.startDate}
                         onChange={(e) => set("startDate", e.target.value)}
+                        required
                         className={inputClass}
                         placeholder="Sep 2025"
                     />
@@ -192,7 +201,7 @@ function ExpForm({ initial = EMPTY, onSave, onCancel, loading }) {
                 >
                     <Upload size={15} />
                     {certPreview
-                        ? "Change certificate image"
+                        ? "Change certificate image/PDF"
                         : "Click to upload certificate"}
                     <input
                         type="file"
@@ -204,12 +213,20 @@ function ExpForm({ initial = EMPTY, onSave, onCancel, loading }) {
 
                 {certPreview && (
                     <div className="mt-3 relative">
-                        <img
-                            src={certPreview}
-                            alt="Certificate preview"
-                            className="w-full max-h-48 object-cover rounded-xl
-                border border-dark-border"
-                        />
+                        {/* Display an icon for PDFs instead of a broken image preview */}
+                        {certFile?.type === "application/pdf" ||
+                        certPreview.endsWith(".pdf") ? (
+                            <div className="w-full h-32 flex items-center justify-center bg-dark-bg rounded-xl border border-dark-border text-slate-400">
+                                PDF Document Selected
+                            </div>
+                        ) : (
+                            <img
+                                src={certPreview}
+                                alt="Certificate preview"
+                                className="w-full max-h-48 object-cover rounded-xl border border-dark-border"
+                            />
+                        )}
+
                         <div className="absolute top-2 right-2 flex gap-2">
                             <a
                                 href={certPreview}
@@ -285,7 +302,8 @@ export default function ExperienceManager() {
                 toast.success("Updated!");
             }
             setEditing(null);
-        } catch {
+        } catch (error) {
+            console.error("THE CRASH IS HAPPENING HERE:", error);
             toast.error("Error saving");
         } finally {
             setSaving(false);
@@ -432,12 +450,20 @@ export default function ExperienceManager() {
                                 {/* Certificate preview */}
                                 {exp.certificate?.url && (
                                     <div className="mt-3 flex items-center gap-2">
-                                        <img
-                                            src={exp.certificate.url}
-                                            alt="cert"
-                                            className="w-16 h-10 object-cover rounded-lg
-                        border border-dark-border"
-                                        />
+                                        {exp.certificate.url.endsWith(
+                                            ".pdf",
+                                        ) ? (
+                                            <div className="w-16 h-10 flex items-center justify-center rounded-lg border border-dark-border text-[10px] text-slate-500">
+                                                PDF
+                                            </div>
+                                        ) : (
+                                            <img
+                                                src={exp.certificate.url}
+                                                alt="cert"
+                                                className="w-16 h-10 object-cover rounded-lg
+                            border border-dark-border"
+                                            />
+                                        )}
                                         <a
                                             href={exp.certificate.url}
                                             target="_blank"
