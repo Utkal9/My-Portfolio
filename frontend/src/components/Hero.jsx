@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import {
     motion,
     AnimatePresence,
@@ -12,18 +12,68 @@ import {
     ExternalLink,
     Play,
     X,
-    Video,
     Sparkles,
     MapPin,
     GraduationCap,
+    Volume2,
+    Github,
+    Linkedin,
 } from "lucide-react";
-import { Github, Linkedin } from "lucide-react";
 import { SiLeetcode } from "react-icons/si";
 import * as THREE from "three";
-import { resumeAPI } from "../services/api.js";
+import { resumeAPI, projectsAPI } from "../services/api.js";
 
-const VIDEO_ID = "1NEe4Yi660D3P5eLqGm04MXYtb_MLHv_r";
-const VIDEO_EMBED = `https://drive.google.com/file/d/${VIDEO_ID}/preview`;
+const DEFAULT_VIDEO_ID = "1NEe4Yi660D3P5eLqGm04MXYtb_MLHv_r";
+const LC_USERNAME = "utkal59";
+const GH_USERNAME = "Utkal9";
+
+function parseDriveFileId(value) {
+    if (!value) return "";
+    const idMatch = value.match(/(?:file\/d\/|id=|\/d\/|open\?id=)([a-zA-Z0-9_-]+)/);
+    if (idMatch) return idMatch[1];
+    return value.trim();
+}
+
+function parseYouTubeVideoId(value) {
+    if (!value) return "";
+    const trimmed = value.trim();
+    const urlMatch = trimmed.match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/);
+    if (urlMatch) return urlMatch[1];
+    if (/^[A-Za-z0-9_-]{11}$/.test(trimmed)) return trimmed;
+    return "";
+}
+
+function parseVideoSource(value) {
+    if (!value) return { type: "drive", id: "" };
+    const youtubeId = parseYouTubeVideoId(value);
+    if (youtubeId) return { type: "youtube", id: youtubeId };
+    const driveId = parseDriveFileId(value);
+    return { type: "drive", id: driveId };
+}
+
+function buildVideoEmbed(source) {
+    if (!source?.id) return "";
+    if (source.type === "youtube") {
+        return `https://www.youtube.com/embed/${source.id}?rel=0&showinfo=0&autoplay=1`;
+    }
+    return `https://drive.google.com/file/d/${source.id}/preview?usp=sharing&embedded=true`;
+}
+
+function buildVideoOpenUrl(source) {
+    if (!source?.id) return "";
+    if (source.type === "youtube") {
+        return `https://youtu.be/${source.id}`;
+    }
+    return `https://drive.google.com/file/d/${source.id}/view`;
+}
+
+function buildVideoThumbnail(source) {
+    if (!source?.id) return "";
+    if (source.type === "youtube") {
+        return `https://img.youtube.com/vi/${source.id}/maxresdefault.jpg`;
+    }
+    return `https://drive.google.com/thumbnail?id=${source.id}&sz=w1200`;
+}
 
 const ROLES = [
     "Full Stack Developer",
@@ -39,11 +89,9 @@ function ThreeBackground() {
     useEffect(() => {
         const el = mountRef.current;
         if (!el) return;
-
         const W = el.clientWidth;
         const H = el.clientHeight;
 
-        // Scene
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, W / H, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({
@@ -56,13 +104,10 @@ function ThreeBackground() {
         el.appendChild(renderer.domElement);
         camera.position.z = 4;
 
-        // Particles
-        const COUNT = 1800;
+        const COUNT = 1600;
         const geo = new THREE.BufferGeometry();
         const pos = new Float32Array(COUNT * 3);
         const col = new Float32Array(COUNT * 3);
-        const sizes = new Float32Array(COUNT);
-
         const palette = [
             new THREE.Color("#4f8ef7"),
             new THREE.Color("#8b5cf6"),
@@ -81,70 +126,19 @@ function ThreeBackground() {
             col[i * 3] = c.r;
             col[i * 3 + 1] = c.g;
             col[i * 3 + 2] = c.b;
-            sizes[i] = Math.random() * 2.5 + 0.5;
         }
         geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
         geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
-        geo.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
-
         const mat = new THREE.PointsMaterial({
             size: 0.04,
             vertexColors: true,
             transparent: true,
-            opacity: 0.75,
+            opacity: 0.7,
             sizeAttenuation: true,
         });
         const points = new THREE.Points(geo, mat);
         scene.add(points);
 
-        // Connecting lines between nearby particles
-        const lineGeo = new THREE.BufferGeometry();
-        const linePos = [];
-        const lineCol = [];
-        const SAMPLE = 120;
-        const DIST_SQ = 1.2;
-
-        for (let i = 0; i < SAMPLE; i++) {
-            for (let j = i + 1; j < SAMPLE; j++) {
-                const ax = pos[i * 3],
-                    ay = pos[i * 3 + 1],
-                    az = pos[i * 3 + 2];
-                const bx = pos[j * 3],
-                    by = pos[j * 3 + 1],
-                    bz = pos[j * 3 + 2];
-                const d2 = (ax - bx) ** 2 + (ay - by) ** 2 + (az - bz) ** 2;
-                if (d2 < DIST_SQ) {
-                    linePos.push(ax, ay, az, bx, by, bz);
-                    lineCol.push(
-                        col[i * 3],
-                        col[i * 3 + 1],
-                        col[i * 3 + 2],
-                        col[j * 3],
-                        col[j * 3 + 1],
-                        col[j * 3 + 2],
-                    );
-                }
-            }
-        }
-        const lineMesh = new THREE.LineSegments(
-            new THREE.BufferGeometry()
-                .setAttribute(
-                    "position",
-                    new THREE.Float32BufferAttribute(linePos, 3),
-                )
-                .setAttribute(
-                    "color",
-                    new THREE.Float32BufferAttribute(lineCol, 3),
-                ),
-            new THREE.LineBasicMaterial({
-                vertexColors: true,
-                transparent: true,
-                opacity: 0.12,
-            }),
-        );
-        scene.add(lineMesh);
-
-        // Mouse parallax
         let mx = 0,
             my = 0;
         const onMouse = (e) => {
@@ -153,25 +147,21 @@ function ThreeBackground() {
         };
         window.addEventListener("mousemove", onMouse);
 
-        // Animate
         let frame;
-        const clock = new THREE.Clock();
+        const startTime = performance.now();
         const animate = () => {
             frame = requestAnimationFrame(animate);
-            const t = clock.getElapsedTime();
+            const t = (performance.now() - startTime) / 1000;
             points.rotation.y = t * 0.04 + mx;
             points.rotation.x = t * 0.02 - my;
-            lineMesh.rotation.y = t * 0.04 + mx;
-            lineMesh.rotation.x = t * 0.02 - my;
-            mat.opacity = 0.6 + Math.sin(t * 0.5) * 0.15;
+            mat.opacity = 0.55 + Math.sin(t * 0.5) * 0.15;
             renderer.render(scene, camera);
         };
         animate();
 
-        // Resize
         const onResize = () => {
-            const nW = el.clientWidth;
-            const nH = el.clientHeight;
+            const nW = el.clientWidth,
+                nH = el.clientHeight;
             camera.aspect = nW / nH;
             camera.updateProjectionMatrix();
             renderer.setSize(nW, nH);
@@ -236,15 +226,14 @@ function TypingEffect({ texts }) {
             <motion.span
                 animate={{ opacity: [1, 0, 1] }}
                 transition={{ duration: 0.8, repeat: Infinity }}
-                className="inline-block w-[3px] h-[0.9em] bg-accent-blue
-          ml-1 align-middle rounded-sm"
+                className="inline-block w-[3px] h-[0.9em] bg-accent-blue ml-1 align-middle rounded-sm"
             />
         </span>
     );
 }
 
-// ── Video CV Modal ────────────────────────────────────────────────────
-function VideoCVModal({ onClose }) {
+// ── Video CV Modal (with sound) ───────────────────────────────────────
+function VideoCVModal({ videoSource, onClose }) {
     useEffect(() => {
         const h = (e) => {
             if (e.key === "Escape") onClose();
@@ -257,122 +246,196 @@ function VideoCVModal({ onClose }) {
         };
     }, [onClose]);
 
+    const embedUrl = buildVideoEmbed(videoSource);
+    const thumbUrl = buildVideoThumbnail(videoSource);
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-[9998] flex items-center justify-center p-4
-        bg-black/85 backdrop-blur-lg"
+            style={{
+                position: "fixed",
+                inset: 0,
+                zIndex: 9998,
+                background: "rgba(0,0,0,0.9)",
+                backdropFilter: "blur(16px)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 16,
+            }}
         >
             <motion.div
-                initial={{ scale: 0.85, opacity: 0, y: 40 }}
+                initial={{ scale: 0.85, opacity: 0, y: 32 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.85, opacity: 0, y: 40 }}
+                exit={{ scale: 0.85, opacity: 0, y: 32 }}
                 transition={{ type: "spring", stiffness: 280, damping: 26 }}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-3xl"
+                style={{ width: "100%", maxWidth: 720, position: "relative" }}
             >
-                {/* Glow */}
+                {/* Glow ring */}
                 <div
-                    className="absolute -inset-2 bg-gradient-to-r from-accent-blue
-          to-accent-purple rounded-3xl blur-2xl opacity-30 pointer-events-none"
+                    style={{
+                        position: "absolute",
+                        inset: -4,
+                        background: "linear-gradient(135deg, #4f8ef7, #8b5cf6)",
+                        borderRadius: 28,
+                        filter: "blur(16px)",
+                        opacity: 0.35,
+                        pointerEvents: "none",
+                    }}
                 />
 
                 <div
-                    className="relative bg-[#070d1a] border border-white/10
-          rounded-3xl overflow-hidden"
+                    style={{
+                        position: "relative",
+                        background: "#070d1a",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: 24,
+                        overflow: "hidden",
+                    }}
                 >
                     {/* Header */}
                     <div
-                        className="flex items-center justify-between px-6 py-4
-            border-b border-white/8"
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            padding: "16px 20px",
+                            borderBottom: "1px solid rgba(255,255,255,0.06)",
+                        }}
                     >
-                        <div className="flex items-center gap-3">
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 12,
+                            }}
+                        >
                             <div
-                                className="w-10 h-10 rounded-xl bg-gradient-to-br
-                from-accent-blue to-accent-purple
-                flex items-center justify-center shadow-glow-blue"
+                                style={{
+                                    width: 36,
+                                    height: 36,
+                                    borderRadius: 10,
+                                    background:
+                                        "linear-gradient(135deg, #4f8ef7, #8b5cf6)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
                             >
-                                <Video size={17} className="text-white" />
+                                <Volume2 size={16} color="white" />
                             </div>
                             <div>
-                                <div className="font-bold text-white text-sm leading-tight">
+                                <div
+                                    style={{
+                                        color: "white",
+                                        fontWeight: 700,
+                                        fontSize: 14,
+                                    }}
+                                >
                                     Video CV — Utkal Behera
                                 </div>
-                                <div className="text-[11px] text-slate-500 mt-0.5">
-                                    Full Stack Developer · MERN & Cloud
+                                <div
+                                    style={{
+                                        color: "#64748b",
+                                        fontSize: 11,
+                                        marginTop: 2,
+                                    }}
+                                >
+                                    Full Stack Developer · MERN & Cloud · Sound
+                                    enabled
                                 </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <div
-                                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full
-                bg-emerald-500/10 border border-emerald-500/20"
-                            >
-                                <motion.span
-                                    animate={{ scale: [1, 1.4, 1] }}
-                                    transition={{
-                                        duration: 1.5,
-                                        repeat: Infinity,
-                                    }}
-                                    className="w-1.5 h-1.5 rounded-full bg-emerald-400 block"
-                                />
-                                <span className="text-[10px] font-bold text-emerald-400">
-                                    LIVE
-                                </span>
-                            </div>
-                            <button
-                                onClick={onClose}
-                                className="w-8 h-8 rounded-lg bg-white/5 hover:bg-red-500/20
-                  text-slate-400 hover:text-red-400
-                  flex items-center justify-center transition-all"
-                            >
-                                <X size={16} />
-                            </button>
-                        </div>
+                        <button
+                            onClick={onClose}
+                            style={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: 8,
+                                background: "rgba(255,255,255,0.05)",
+                                border: "1px solid rgba(255,255,255,0.1)",
+                                color: "#94a3b8",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                            }}
+                        >
+                            <X size={16} />
+                        </button>
                     </div>
 
-                    {/* Video */}
+                    {/* Video 16:9 */}
                     <div
-                        className="relative w-full bg-black"
-                        style={{ paddingTop: "56.25%" }}
+                        style={{
+                            position: "relative",
+                            width: "100%",
+                            paddingTop: "56.25%",
+                            background: "#000",
+                        }}
                     >
                         <iframe
-                            src={VIDEO_EMBED}
-                            allow="autoplay; encrypted-media"
+                            src={embedUrl}
+                            allow="autoplay; encrypted-media; fullscreen"
                             allowFullScreen
-                            className="absolute inset-0 w-full h-full"
-                            style={{ border: "none" }}
+                            style={{
+                                position: "absolute",
+                                inset: 0,
+                                width: "100%",
+                                height: "100%",
+                                border: "none",
+                            }}
                             title="Utkal Behera Video CV"
                         />
                     </div>
 
                     {/* Footer */}
                     <div
-                        className="flex items-center justify-between px-6 py-3
-            border-t border-white/8"
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            padding: "12px 20px",
+                            borderTop: "1px solid rgba(255,255,255,0.06)",
+                        }}
                     >
-                        <div className="flex gap-2">
+                        <div style={{ display: "flex", gap: 8 }}>
                             {["MERN", "Cloud", "DevOps", "Next.js"].map((t) => (
                                 <span
                                     key={t}
-                                    className="text-[10px] font-bold px-2.5 py-1 rounded-full
-                    bg-accent-blue/10 text-accent-blue border border-accent-blue/20"
+                                    style={{
+                                        fontSize: 10,
+                                        fontWeight: 700,
+                                        padding: "4px 10px",
+                                        borderRadius: 999,
+                                        background: "rgba(79,142,247,0.1)",
+                                        color: "#4f8ef7",
+                                        border: "1px solid rgba(79,142,247,0.2)",
+                                    }}
                                 >
                                     {t}
                                 </span>
                             ))}
                         </div>
                         <a
-                            href={`https://drive.google.com/file/d/${VIDEO_ID}/view`}
+                            href={buildVideoOpenUrl(videoSource)}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-[11px] text-accent-blue hover:underline
-                flex items-center gap-1"
+                            style={{
+                                fontSize: 11,
+                                color: "#4f8ef7",
+                                textDecoration: "none",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                            }}
                         >
-                            <ExternalLink size={11} /> Open in Drive
+                            <ExternalLink size={11} />
+                            {videoSource.type === "youtube" ? "Open in YouTube" : "Open in Drive"}
                         </a>
                     </div>
                 </div>
@@ -381,57 +444,57 @@ function VideoCVModal({ onClose }) {
     );
 }
 
-// ── Social button ─────────────────────────────────────────────────────
-function SocialBtn({ href, icon, label, color }) {
-    return (
-        <motion.a
-            href={href}
-            target="_blank"
-            rel="noreferrer"
-            whileHover={{ y: -4, scale: 1.08 }}
-            whileTap={{ scale: 0.95 }}
-            title={label}
-            className="group relative w-12 h-12 rounded-2xl flex items-center justify-center
-        bg-white/5 dark:bg-white/5 border border-white/10
-        text-slate-400 transition-all duration-300"
-            style={{ "--hover-color": color }}
-        >
-            <div
-                className="absolute inset-0 rounded-2xl opacity-0
-        group-hover:opacity-100 transition-opacity duration-300"
-                style={{
-                    background: `${color}18`,
-                    boxShadow: `0 0 20px ${color}40`,
-                }}
-            />
-            <div className="relative text-xl" style={{ color: "inherit" }}>
-                {icon}
-            </div>
-            <style>{`
-        a:hover .social-icon-${label.toLowerCase().replace(/\s/g, "")} {
-          color: ${color} !important;
-        }
-      `}</style>
-        </motion.a>
-    );
-}
-
 // ── Stat pill ─────────────────────────────────────────────────────────
-function StatPill({ value, label, color }) {
+function StatPill({ value, label, color, loading }) {
     return (
-        <div className="flex flex-col items-center">
-            <span className="text-2xl font-black" style={{ color }}>
-                {value}
+        <div
+            style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+            }}
+        >
+            <span
+                style={{
+                    fontSize: "1.4rem",
+                    fontWeight: 900,
+                    color,
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                }}
+            >
+                {loading ? (
+                    <span
+                        style={{
+                            display: "inline-block",
+                            width: 32,
+                            height: 20,
+                            background: "rgba(255,255,255,0.08)",
+                            borderRadius: 4,
+                            animation: "shimmer 1.5s infinite",
+                        }}
+                    />
+                ) : (
+                    value
+                )}
             </span>
-            <span className="text-[10px] text-slate-500 uppercase tracking-widest mt-0.5">
+            <span
+                style={{
+                    fontSize: "0.6rem",
+                    color: "#64748b",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.12em",
+                    marginTop: 2,
+                    fontWeight: 600,
+                }}
+            >
                 {label}
             </span>
         </div>
     );
 }
 
-// ── Avatar card with 3D tilt ──────────────────────────────────────────
-function AvatarCard({ hero, onVideoClick }) {
+// ── Avatar + silent video ─────────────────────────────────────────────
+function AvatarWithVideo({ profileImage }) {
     const mouseX = useMotionValue(0.5);
     const mouseY = useMotionValue(0.5);
     const springX = useSpring(mouseX, { stiffness: 120, damping: 18 });
@@ -440,7 +503,7 @@ function AvatarCard({ hero, onVideoClick }) {
     const rotateY = useTransform(springX, [0, 1], ["-10deg", "10deg"]);
     const glareX = useTransform(springX, [0, 1], ["0%", "100%"]);
     const glareY = useTransform(springY, [0, 1], ["0%", "100%"]);
-    const glare = useMotionTemplate`radial-gradient(circle at ${glareX} ${glareY}, rgba(255,255,255,0.25) 0%, transparent 55%)`;
+    const glare = useMotionTemplate`radial-gradient(circle at ${glareX} ${glareY}, rgba(255,255,255,0.2) 0%, transparent 55%)`;
 
     return (
         <motion.div
@@ -458,9 +521,9 @@ function AvatarCard({ hero, onVideoClick }) {
         >
             <motion.div
                 style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-                className="relative w-72 h-72 md:w-96 md:h-96 lg:w-[420px] lg:h-[420px]"
+                className="relative w-72 h-72 md:w-96 md:h-96 lg:w-[400px] lg:h-[400px]"
             >
-                {/* Spinning gradient aura */}
+                {/* Spinning conic gradient aura */}
                 <motion.div
                     animate={{ rotate: 360 }}
                     transition={{
@@ -468,69 +531,121 @@ function AvatarCard({ hero, onVideoClick }) {
                         repeat: Infinity,
                         ease: "linear",
                     }}
-                    className="absolute -inset-5 rounded-full opacity-25 dark:opacity-40"
                     style={{
+                        position: "absolute",
+                        inset: -16,
+                        borderRadius: "50%",
                         background:
                             "conic-gradient(from 0deg, #4f8ef7, #8b5cf6, #06b6d4, #10b981, #4f8ef7)",
                         filter: "blur(20px)",
+                        opacity: 0.22,
+                        pointerEvents: "none",
                     }}
                 />
 
-                {/* Outer ring */}
-                <div className="absolute -inset-2 rounded-full border border-white/10" />
-                <div className="absolute -inset-4 rounded-full border border-white/5" />
-
-                {/* Main avatar circle */}
+                {/* Outer rings */}
                 <div
-                    className="absolute inset-0 rounded-full overflow-hidden
-          border-4 border-white/10 shadow-2xl z-10 group"
+                    style={{
+                        position: "absolute",
+                        inset: -6,
+                        borderRadius: "50%",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                        pointerEvents: "none",
+                    }}
+                />
+                <div
+                    style={{
+                        position: "absolute",
+                        inset: -14,
+                        borderRadius: "50%",
+                        border: "1px solid rgba(255,255,255,0.04)",
+                        pointerEvents: "none",
+                    }}
+                />
+
+                {/* Main circle */}
+                <div
+                    style={{
+                        position: "absolute",
+                        inset: 0,
+                        borderRadius: "50%",
+                        overflow: "hidden",
+                        border: "3px solid rgba(15,23,42,0.08)",
+                        cursor: "default",
+                        zIndex: 10,
+                    }}
                 >
-                    {hero.profileImage ? (
+                    {/* Profile photo — always present as base */}
+                    {profileImage && (
                         <img
-                            src={hero.profileImage}
+                            src={profileImage}
                             alt="Utkal Behera"
-                            className="w-full h-full object-cover object-top
-                group-hover:scale-105 transition-transform duration-700"
+                            style={{
+                                position: "absolute",
+                                inset: 0,
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                objectPosition: "top",
+                            }}
                         />
-                    ) : (
+                    )}
+
+                    {/* Fallback UB if no photo */}
+                    {!profileImage && (
                         <div
-                            className="w-full h-full bg-gradient-to-br
-              from-accent-blue to-accent-purple
-              flex items-center justify-center
-              text-white text-7xl font-black"
+                            style={{
+                                position: "absolute",
+                                inset: 0,
+                                background:
+                                    "linear-gradient(135deg, #4f8ef7, #8b5cf6)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: "4rem",
+                                fontWeight: 900,
+                                color: "white",
+                            }}
                         >
                             UB
                         </div>
                     )}
-                    {/* Glare */}
+
+                    {/* Glare overlay */}
                     <motion.div
-                        className="absolute inset-0 pointer-events-none
-              mix-blend-overlay opacity-40"
-                        style={{ background: glare }}
+                        style={{
+                            position: "absolute",
+                            inset: 0,
+                            background: glare,
+                            mixBlendMode: "overlay",
+                            opacity: 0.3,
+                            pointerEvents: "none",
+                        }}
                     />
+
                 </div>
 
                 {/* Badge — Top Skill */}
                 <motion.div
                     style={{ translateZ: 60 }}
-                    initial={{ opacity: 0, x: -20 }}
+                    initial={{ opacity: 0, x: -24 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.8 }}
                     className="absolute top-8 -left-6 z-20
             flex items-center gap-3 px-4 py-3 rounded-2xl
-            bg-white/10 dark:bg-[#0d1424]/90
-            border border-white/15 backdrop-blur-xl shadow-xl"
+            bg-slate-900/90 dark:bg-[#0d1424]/90 border border-slate-200/10 dark:border-white/12
+            backdrop-blur-xl shadow-xl"
                 >
                     <div
                         className="w-9 h-9 rounded-xl bg-accent-blue/20
             border border-accent-blue/30
-            flex items-center justify-center text-lg"
+            flex items-center justify-center text-lg text-white"
                     >
                         ⚛
                     </div>
                     <div>
                         <div
-                            className="text-[10px] text-slate-400 font-bold
+                            className="text-[10px] text-slate-300 dark:text-slate-400 font-bold
               uppercase tracking-widest"
                         >
                             Top Skill
@@ -544,13 +659,13 @@ function AvatarCard({ hero, onVideoClick }) {
                 {/* Badge — Available */}
                 <motion.div
                     style={{ translateZ: 80 }}
-                    initial={{ opacity: 0, x: 20 }}
+                    initial={{ opacity: 0, x: 24 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 1 }}
                     className="absolute bottom-14 -right-6 z-20
             flex items-center gap-3 px-4 py-3 rounded-2xl
-            bg-white/10 dark:bg-[#0d1424]/90
-            border border-white/15 backdrop-blur-xl shadow-xl"
+            bg-slate-900/90 dark:bg-[#0d1424]/90 border border-slate-200/10 dark:border-white/12
+            backdrop-blur-xl shadow-xl"
                 >
                     <div className="relative w-3 h-3">
                         <span
@@ -563,60 +678,6 @@ function AvatarCard({ hero, onVideoClick }) {
                         Available for Work
                     </span>
                 </motion.div>
-
-                {/* Badge — Video CV */}
-                <motion.button
-                    style={{ translateZ: 90 }}
-                    onClick={onVideoClick}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1.2 }}
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="absolute -bottom-4 left-1/2 -translate-x-1/2 z-20
-            flex items-center gap-3 px-5 py-3 rounded-2xl
-            bg-white/10 dark:bg-[#0d1424]/90
-            border border-accent-purple/40 backdrop-blur-xl shadow-xl
-            cursor-pointer hover:border-accent-purple/70
-            transition-all duration-300 group"
-                >
-                    <div
-                        className="relative w-9 h-9 rounded-xl flex-shrink-0
-            bg-gradient-to-br from-accent-blue to-accent-purple
-            flex items-center justify-center shadow-glow-blue"
-                    >
-                        <span
-                            className="absolute inset-0 rounded-xl bg-accent-purple/40
-              animate-ping opacity-0 group-hover:opacity-75"
-                        />
-                        <Play
-                            size={13}
-                            className="text-white ml-0.5 relative z-10"
-                        />
-                    </div>
-                    <div className="text-left">
-                        <div className="text-xs font-bold text-white leading-tight">
-                            Video CV
-                        </div>
-                        <div className="text-[9px] text-slate-400 mt-0.5">
-                            Watch my story
-                        </div>
-                    </div>
-                    {/* Notification dot */}
-                    <span
-                        className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full
-            bg-accent-purple flex items-center justify-center"
-                    >
-                        <span
-                            className="absolute inset-0 rounded-full bg-accent-purple
-              animate-ping opacity-60"
-                        />
-                        <Play
-                            size={7}
-                            className="text-white relative z-10 ml-px"
-                        />
-                    </span>
-                </motion.button>
             </motion.div>
         </motion.div>
     );
@@ -625,55 +686,123 @@ function AvatarCard({ hero, onVideoClick }) {
 // ── Animation variants ────────────────────────────────────────────────
 const container = {
     hidden: {},
-    show: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
+    show: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } },
 };
 const item = {
-    hidden: { opacity: 0, y: 32 },
+    hidden: { opacity: 0, y: 28 },
     show: {
         opacity: 1,
         y: 0,
-        transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] },
+        transition: { duration: 0.65, ease: [0.16, 1, 0.3, 1] },
     },
 };
 
 // ── Main Hero ─────────────────────────────────────────────────────────
 export default function Hero({ config }) {
     const hero = config?.hero || {};
-    const [showVideo, setShowVideo] = useState(false);
+    const videoSource = parseVideoSource(hero.videoCV || "") || {
+        type: "drive",
+        id: DEFAULT_VIDEO_ID,
+    };
+    if (!videoSource.id) {
+        videoSource.id = DEFAULT_VIDEO_ID;
+        videoSource.type = "drive";
+    }
+
+    const [showModal, setShowModal] = useState(false);
+    const [stats, setStats] = useState({
+        projects: null,
+        lcSolved: null,
+        cgpa: null,
+        internships: null,
+    });
+    const [statsLoading, setStatsLoading] = useState(true);
+
+    // Fetch all stats in parallel
+    useEffect(() => {
+        const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+        Promise.allSettled([
+            // Projects count
+            fetch(`${API}/projects`).then((r) => r.json()),
+            // LeetCode
+            fetch(`${API}/leetcode/${LC_USERNAME}`).then((r) => r.json()),
+            // Experience (internships)
+            fetch(`${API}/experience`).then((r) => r.json()),
+        ]).then(([projRes, lcRes, expRes]) => {
+            const projects =
+                projRes.status === "fulfilled"
+                    ? projRes.value?.data?.length || projRes.value?.total || 0
+                    : null;
+
+            const lcSolved =
+                lcRes.status === "fulfilled" && lcRes.value?.totalSolved
+                    ? lcRes.value.totalSolved
+                    : null;
+
+            const internships =
+                expRes.status === "fulfilled"
+                    ? expRes.value?.data?.length || 0
+                    : null;
+
+            setStats({
+                projects: projects !== null ? `${projects}+` : null,
+                lcSolved: lcSolved !== null ? `${lcSolved}+` : null,
+                cgpa: "7.6",
+                internships: internships !== null ? `${internships}+` : null,
+            });
+            setStatsLoading(false);
+        });
+    }, []);
+
+    const socials = [
+        {
+            href: "https://github.com/Utkal9",
+            icon: <Github size={19} />,
+            label: "GitHub",
+            hover: "hover:bg-[#333]/80 hover:border-[#555] hover:text-white",
+        },
+        {
+            href: "https://www.linkedin.com/in/utkal-behera59/",
+            icon: <Linkedin size={19} />,
+            label: "LinkedIn",
+            hover: "hover:bg-[#0077b5]/20 hover:border-[#0077b5]/60 hover:text-[#0077b5]",
+        },
+        {
+            href: "https://leetcode.com/u/utkal59/",
+            icon: <SiLeetcode size={19} />,
+            label: "LeetCode",
+            hover: "hover:bg-[#f89f1b]/15 hover:border-[#f89f1b]/50 hover:text-[#f89f1b]",
+        },
+    ];
 
     return (
         <section
             id="hero"
-            className="relative min-h-screen flex items-center
-        pt-20 pb-12 overflow-hidden
-        bg-[#060d1b] dark:bg-[#060d1b]"
+            className="relative min-h-screen flex items-center pt-16 pb-10 overflow-hidden bg-light-bg dark:bg-dark-bg transition-colors duration-300"
         >
-            {/* Three.js particle background */}
             <ThreeBackground />
 
             {/* Ambient glows */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
                 <div
-                    className="absolute -top-40 -left-40 w-[600px] h-[600px]
-          rounded-full bg-accent-blue/8 blur-[100px]"
+                    className="absolute -top-32 -left-32 w-[500px] h-[500px]
+          rounded-full blur-[120px]"
+                    style={{ background: "rgba(79,142,247,0.07)" }}
                 />
                 <div
-                    className="absolute -bottom-40 -right-40 w-[500px] h-[500px]
-          rounded-full bg-accent-purple/8 blur-[100px]"
-                />
-                <div
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2
-          -translate-y-1/2 w-[800px] h-[400px]
-          bg-accent-blue/3 blur-[120px] rounded-full"
+                    className="absolute -bottom-32 -right-32 w-[450px] h-[450px]
+          rounded-full blur-[100px]"
+                    style={{ background: "rgba(139,92,246,0.07)" }}
                 />
             </div>
 
             {/* Dot grid */}
             <div
-                className="absolute inset-0 pointer-events-none opacity-20"
+                className="absolute inset-0 pointer-events-none opacity-[0.18]"
                 style={{
                     backgroundImage:
-                        "radial-gradient(rgba(79,142,247,0.4) 1px, transparent 1px)",
+                        "radial-gradient(rgba(79,142,247,0.5) 1px, transparent 1px)",
                     backgroundSize: "36px 36px",
                     maskImage:
                         "radial-gradient(ellipse 80% 80% at 50% 50%, black, transparent)",
@@ -685,7 +814,7 @@ export default function Hero({ config }) {
             <div className="section-container w-full relative z-10">
                 <div
                     className="flex flex-col lg:flex-row items-center
-          justify-between gap-12 xl:gap-20"
+          justify-between gap-10 xl:gap-16"
                 >
                     {/* ── LEFT ── */}
                     <motion.div
@@ -697,13 +826,13 @@ export default function Hero({ config }) {
                         {/* Status badge */}
                         <motion.div
                             variants={item}
-                            className="inline-flex items-center gap-2.5 mb-8
+                            className="inline-flex items-center gap-2 mb-6
                 px-4 py-2 rounded-full
-                bg-accent-blue/8 border border-accent-blue/20
-                backdrop-blur-sm"
+                border border-accent-blue/20"
+                            style={{ background: "rgba(79,142,247,0.06)" }}
                         >
                             <motion.span
-                                animate={{ scale: [1, 1.3, 1] }}
+                                animate={{ scale: [1, 1.35, 1] }}
                                 transition={{ duration: 2, repeat: Infinity }}
                                 className="w-2 h-2 rounded-full bg-accent-blue block"
                             />
@@ -714,14 +843,14 @@ export default function Hero({ config }) {
                                 {hero.tagline ||
                                     "Open to Internships & Placements"}
                             </span>
-                            <Sparkles size={13} className="text-accent-blue" />
+                            <Sparkles size={12} className="text-accent-blue" />
                         </motion.div>
 
                         {/* Greeting */}
                         <motion.p
                             variants={item}
                             className="text-slate-400 text-sm font-semibold
-                tracking-[0.2em] uppercase mb-3"
+                tracking-[0.18em] uppercase mb-3"
                         >
                             Hello World 👋, I'm
                         </motion.p>
@@ -729,8 +858,11 @@ export default function Hero({ config }) {
                         {/* Name */}
                         <motion.h1
                             variants={item}
-                            className="text-5xl md:text-6xl lg:text-7xl xl:text-[5rem]
-                font-black mb-5 leading-[1.0] tracking-tight text-white"
+                            className="font-black mb-4 leading-[1.0] tracking-tight text-slate-900 dark:text-white"
+                            style={{
+                                fontSize: "clamp(2.8rem, 7vw, 5rem)",
+                                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                            }}
                         >
                             {hero.name || "Utkal Behera"}
                         </motion.h1>
@@ -738,7 +870,7 @@ export default function Hero({ config }) {
                         {/* Typing */}
                         <motion.div
                             variants={item}
-                            className="text-2xl md:text-3xl mb-6 h-10
+                            className="text-2xl md:text-3xl mb-5 h-10
                 flex items-center justify-center lg:justify-start"
                         >
                             <TypingEffect texts={ROLES} />
@@ -748,93 +880,113 @@ export default function Hero({ config }) {
                         <motion.p
                             variants={item}
                             className="text-slate-400 text-base md:text-lg
-                max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed"
+                max-w-xl mx-auto lg:mx-0 mb-6 leading-relaxed"
                         >
                             {hero.subtitle ||
                                 "Building scalable web applications with MERN Stack · Next.js · Cloud & DevOps. Currently @ LPU, CSE."}
                         </motion.p>
 
-                        {/* Meta info */}
+                        {/* Meta */}
                         <motion.div
                             variants={item}
                             className="flex items-center gap-4 justify-center lg:justify-start
-                mb-8 text-slate-500 text-xs font-medium"
+                mb-6 text-slate-500 text-xs font-medium"
                         >
                             <span className="flex items-center gap-1.5">
                                 <MapPin
-                                    size={13}
+                                    size={12}
                                     className="text-accent-blue"
                                 />
                                 Phagwara, Punjab
                             </span>
-                            <span className="w-1 h-1 rounded-full bg-slate-600" />
+                            <span className="w-1 h-1 rounded-full bg-slate-700" />
                             <span className="flex items-center gap-1.5">
                                 <GraduationCap
-                                    size={13}
+                                    size={12}
                                     className="text-accent-blue"
                                 />
                                 LPU · CSE · 2026
                             </span>
                         </motion.div>
 
-                        {/* Stats row */}
+                        {/* Stats row — real fetched data */}
                         <motion.div
                             variants={item}
-                            className="flex items-center gap-6 justify-center lg:justify-start
-                mb-10 pb-8 border-b border-white/6"
+                            className="flex items-center gap-5 justify-center lg:justify-start
+                mb-8 pb-7"
+                            style={{
+                                borderBottom:
+                                    "1px solid rgba(15,23,42,0.08)",
+                            }}
                         >
                             <StatPill
-                                value="12+"
+                                value={stats.projects}
                                 label="Projects"
                                 color="#4f8ef7"
+                                loading={statsLoading && !stats.projects}
                             />
-                            <div className="w-px h-8 bg-white/8" />
+                            <div
+                                style={{
+                                    width: 1,
+                                    height: 32,
+                                    background: "rgba(15,23,42,0.12)",
+                                }}
+                            />
                             <StatPill
-                                value="297+"
+                                value={stats.lcSolved}
                                 label="LC Solved"
                                 color="#f59e0b"
+                                loading={statsLoading && !stats.lcSolved}
                             />
-                            <div className="w-px h-8 bg-white/8" />
+                            <div
+                                style={{
+                                    width: 1,
+                                    height: 32,
+                                    background: "rgba(15,23,42,0.12)",
+                                }}
+                            />
                             <StatPill
-                                value="7.6"
+                                value={stats.cgpa}
                                 label="CGPA"
                                 color="#10b981"
+                                loading={false}
                             />
-                            <div className="w-px h-8 bg-white/8" />
+                            <div
+                                style={{
+                                    width: 1,
+                                    height: 32,
+                                    background: "rgba(15,23,42,0.12)",
+                                }}
+                            />
                             <StatPill
-                                value="3+"
+                                value={stats.internships}
                                 label="Internships"
                                 color="#8b5cf6"
+                                loading={statsLoading && !stats.internships}
                             />
                         </motion.div>
 
                         {/* CTA Buttons */}
                         <motion.div
                             variants={item}
-                            className="flex flex-wrap gap-3 justify-center lg:justify-start mb-8"
+                            className="flex flex-wrap gap-3 justify-center lg:justify-start mb-7"
                         >
-                            {/* Primary */}
                             <motion.a
                                 href="#projects"
                                 whileHover={{ scale: 1.04, y: -2 }}
                                 whileTap={{ scale: 0.97 }}
                                 className="relative flex items-center gap-2.5
                   px-7 py-3.5 rounded-2xl font-bold text-sm text-white
-                  overflow-hidden shadow-glow-blue"
+                  overflow-hidden"
                                 style={{
                                     background:
                                         "linear-gradient(135deg, #4f8ef7, #8b5cf6)",
                                 }}
                             >
-                                <div
-                                    className="absolute inset-0 bg-white/15 opacity-0
-                  hover:opacity-100 transition-opacity"
-                                />
-                                <ExternalLink size={17} />
+                                <ExternalLink size={16} />
                                 {hero.cta1Text || "View Projects"}
                             </motion.a>
 
-                            {/* Secondary */}
                             <motion.a
                                 href={resumeAPI.download()}
                                 target="_blank"
@@ -842,43 +994,27 @@ export default function Hero({ config }) {
                                 whileHover={{ scale: 1.04, y: -2 }}
                                 whileTap={{ scale: 0.97 }}
                                 className="flex items-center gap-2.5 px-7 py-3.5 rounded-2xl
-                  font-bold text-sm text-slate-200
-                  bg-white/5 border border-white/12
-                  hover:bg-white/10 hover:border-accent-blue/40
-                  hover:text-white transition-all duration-300"
+                  font-bold text-sm text-slate-900 dark:text-slate-200
+                  border border-slate-300/70 dark:border-white/10 bg-slate-100/80 dark:bg-white/5 transition-all duration-300"
                             >
-                                <Download size={17} />
+                                <Download size={16} />
                                 {hero.cta2Text || "Download CV"}
                             </motion.a>
 
-                            {/* Video CV */}
                             <motion.button
-                                onClick={() => setShowVideo(true)}
+                                type="button"
+                                onClick={() => setShowModal(true)}
                                 whileHover={{ scale: 1.04, y: -2 }}
                                 whileTap={{ scale: 0.97 }}
-                                className="group relative flex items-center gap-2.5
-                  px-7 py-3.5 rounded-2xl font-bold text-sm
-                  text-accent-purple overflow-hidden
-                  bg-accent-purple/8 border border-accent-purple/30
-                  hover:bg-accent-purple/15 hover:border-accent-purple/60
-                  transition-all duration-300"
+                                className="flex items-center gap-2.5 px-6 py-3.5 rounded-2xl
+                  font-bold text-sm text-white transition-all duration-300"
+                                style={{
+                                    background: "linear-gradient(135deg, #ef5350, #d32f2f)",
+                                    border: "1px solid rgba(15,23,42,0.08)",
+                                }}
                             >
-                                <div
-                                    className="relative w-7 h-7 rounded-lg flex-shrink-0
-                  bg-gradient-to-br from-accent-blue to-accent-purple
-                  flex items-center justify-center"
-                                >
-                                    <span
-                                        className="absolute inset-0 rounded-lg
-                    bg-accent-purple/50 opacity-0 group-hover:opacity-100
-                    animate-ping"
-                                    />
-                                    <Play
-                                        size={12}
-                                        className="text-white ml-0.5 relative z-10"
-                                    />
-                                </div>
-                                Watch Video CV
+                                <Play size={16} />
+                                Video CV
                             </motion.button>
                         </motion.div>
 
@@ -888,82 +1024,46 @@ export default function Hero({ config }) {
                             className="flex items-center gap-3 justify-center lg:justify-start"
                         >
                             <span
-                                className="text-xs text-slate-600 font-medium
-                tracking-wider uppercase mr-2"
+                                className="text-[10px] text-slate-600 dark:text-slate-300 font-semibold
+                tracking-widest uppercase mr-1"
                             >
-                                Find me on
+                                Find me
                             </span>
-
-                            <motion.a
-                                href="https://github.com/Utkal9"
-                                target="_blank"
-                                rel="noreferrer"
-                                whileHover={{ y: -4, scale: 1.1 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="group w-11 h-11 rounded-2xl flex items-center justify-center
-                  bg-white/5 border border-white/10
-                  hover:bg-[#333]/80 hover:border-[#555]
-                  transition-all duration-300 text-slate-400
-                  hover:text-white hover:shadow-lg"
-                                title="GitHub"
-                            >
-                                <Github size={20} />
-                            </motion.a>
-
-                            <motion.a
-                                href="https://www.linkedin.com/in/utkal-behera59/"
-                                target="_blank"
-                                rel="noreferrer"
-                                whileHover={{ y: -4, scale: 1.1 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="group w-11 h-11 rounded-2xl flex items-center justify-center
-                  bg-white/5 border border-white/10
-                  hover:bg-[#0077b5]/20 hover:border-[#0077b5]/60
-                  transition-all duration-300 text-slate-400
-                  hover:text-[#0077b5] hover:shadow-lg
-                  hover:shadow-[#0077b5]/20"
-                                title="LinkedIn"
-                            >
-                                <Linkedin size={20} />
-                            </motion.a>
-
-                            <motion.a
-                                href="https://leetcode.com/u/utkal59/"
-                                target="_blank"
-                                rel="noreferrer"
-                                whileHover={{ y: -4, scale: 1.1 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="group w-11 h-11 rounded-2xl flex items-center justify-center
-                  bg-white/5 border border-white/10
-                  hover:bg-[#f89f1b]/15 hover:border-[#f89f1b]/50
-                  transition-all duration-300 text-slate-400
-                  hover:text-[#f89f1b] hover:shadow-lg
-                  hover:shadow-[#f89f1b]/20"
-                                title="LeetCode"
-                            >
-                                <SiLeetcode size={20} />
-                            </motion.a>
+                            {socials.map((s) => (
+                                <motion.a
+                                    key={s.label}
+                                    href={s.href}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    whileHover={{ y: -4, scale: 1.1 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    title={s.label}
+                                    className={`w-11 h-11 rounded-2xl flex items-center justify-center
+                    border text-slate-500 dark:text-slate-300 bg-slate-100/85 dark:bg-white/5 border-slate-300/60 dark:border-white/10 transition-all duration-300 ${s.hover}`}
+                                >
+                                    {s.icon}
+                                </motion.a>
+                            ))}
                         </motion.div>
                     </motion.div>
 
-                    {/* ── RIGHT — Avatar ── */}
+                    {/* ── RIGHT — Avatar with silent video ── */}
                     <motion.div
                         initial={{
                             opacity: 0,
-                            scale: 0.85,
+                            scale: 0.88,
                             filter: "blur(12px)",
                         }}
                         animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
                         transition={{
                             duration: 1.1,
-                            delay: 0.25,
+                            delay: 0.2,
                             ease: "easeOut",
                         }}
-                        className="relative lg:w-[45%] flex justify-center"
+                        className="relative lg:w-[44%] flex justify-center"
                     >
-                        <AvatarCard
-                            hero={hero}
-                            onVideoClick={() => setShowVideo(true)}
+                        <AvatarWithVideo
+                            profileImage={hero.profileImage}
                         />
                     </motion.div>
                 </div>
@@ -973,34 +1073,34 @@ export default function Hero({ config }) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 2.5 }}
-                    className="absolute bottom-6 left-1/2 -translate-x-1/2
+                    className="absolute bottom-4 left-1/2 -translate-x-1/2
             flex flex-col items-center gap-2"
                 >
                     <span
-                        className="text-[10px] text-slate-600 uppercase
+                        className="text-[10px] text-slate-700 uppercase
             tracking-widest font-medium"
                     >
-                        Scroll to explore
+                        Scroll
                     </span>
                     <motion.div
-                        animate={{ y: [0, 8, 0] }}
+                        animate={{ y: [0, 7, 0] }}
                         transition={{
                             duration: 2,
                             repeat: Infinity,
                             ease: "easeInOut",
                         }}
-                        className="w-6 h-10 border border-slate-700 rounded-full
-              flex justify-center pt-2"
+                        className="w-5 h-9 border border-slate-700 rounded-full
+              flex justify-center pt-1.5"
                     >
                         <div className="w-1 h-2 bg-accent-blue rounded-full" />
                     </motion.div>
                 </motion.div>
             </div>
 
-            {/* Video Modal */}
+            {/* Video Modal with sound */}
             <AnimatePresence>
-                {showVideo && (
-                    <VideoCVModal onClose={() => setShowVideo(false)} />
+                {showModal && (
+                    <VideoCVModal videoSource={videoSource} onClose={() => setShowModal(false)} />
                 )}
             </AnimatePresence>
         </section>

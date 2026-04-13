@@ -164,6 +164,23 @@ export default function HeroEditor() {
                         </label>
                     </div>
                 </div>
+                <div>
+                    <label
+                        className="block text-[10px] text-slate-400 font-bold
+    uppercase tracking-wider mb-1.5"
+                    >
+                        Video CV — Google Drive ID or YouTube URL
+                    </label>
+                    <input
+                        value={form.hero?.videoCV || ""}
+                        onChange={(e) => set("hero", "videoCV", e.target.value)}
+                        className={inputClass}
+                        placeholder="https://youtu.be/VIDEO_ID or 1NEe4Yi660D3P5eLqGm04MXYtb_MLHv_r"
+                    />
+                    <p className="text-[10px] text-slate-600 mt-1">
+                        Paste a Google Drive file ID or any YouTube link / ID.
+                    </p>
+                </div>
             </div>
         ),
         About: (
