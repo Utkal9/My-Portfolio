@@ -42,6 +42,7 @@ const siteConfigSchema = new mongoose.Schema(
             cta2Link: { type: String, default: "/api/resume/download" },
             profileImage: { type: String, default: "" },
             profileImagePublicId: { type: String, default: "" },
+            videoCV: { type: String, default: "" },
         },
         about: {
             description: { type: String, default: "" },
