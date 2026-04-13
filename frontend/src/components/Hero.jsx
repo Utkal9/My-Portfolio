@@ -729,7 +729,9 @@ export default function Hero({ config }) {
             fetch(`${API}/leetcode/${LC_USERNAME}`).then((r) => r.json()),
             // Experience (internships)
             fetch(`${API}/experience`).then((r) => r.json()),
-        ]).then(([projRes, lcRes, expRes]) => {
+            // Semesters (CGPA)
+            fetch(`${API}/semesters`).then((r) => r.json()),
+        ]).then(([projRes, lcRes, expRes, semRes]) => {
             const projects =
                 projRes.status === "fulfilled"
                     ? projRes.value?.data?.length || projRes.value?.total || 0
@@ -745,10 +747,15 @@ export default function Hero({ config }) {
                     ? expRes.value?.data?.length || 0
                     : null;
 
+            const cgpa =
+                semRes.status === "fulfilled" && semRes.value?.cgpa
+                    ? semRes.value.cgpa
+                    : null;
+
             setStats({
                 projects: projects !== null ? `${projects}+` : null,
                 lcSolved: lcSolved !== null ? `${lcSolved}+` : null,
-                cgpa: "7.6",
+                cgpa: cgpa !== null ? `${cgpa}` : null,
                 internships: internships !== null ? `${internships}+` : null,
             });
             setStatsLoading(false);
@@ -949,7 +956,7 @@ export default function Hero({ config }) {
                                 value={stats.cgpa}
                                 label="CGPA"
                                 color="#10b981"
-                                loading={false}
+                                loading={statsLoading && !stats.cgpa}
                             />
                             <div
                                 style={{
